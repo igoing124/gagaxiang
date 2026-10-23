@@ -1,0 +1,303 @@
+/* pages/checkout/checkout.wxss —— 确认订单页的样式 */
+
+/* 底部有固定的提交栏，页面底部留出空间 */
+.page {
+  padding: 32rpx 32rpx 220rpx;
+}
+
+.page-title {
+  margin: 8rpx 8rpx 28rpx;
+  font-size: 40rpx;
+  font-weight: 700;
+}
+
+.card {
+  margin-bottom: 24rpx;
+  padding: 32rpx;
+  background: #ffffff;
+  border-radius: 28rpx;
+  box-shadow: 0 8rpx 24rpx rgba(58, 36, 23, 0.06);
+}
+
+.card-title {
+  margin-bottom: 8rpx;
+  font-size: 28rpx;
+  font-weight: 700;
+  color: #6b5848;
+}
+
+/* ========== 配送信息 ========== */
+.delivery-field {
+  display: flex;
+  align-items: center;
+  padding: 20rpx 0;
+  border-bottom: 1rpx solid #f7efe7;
+}
+
+.delivery-label {
+  flex-shrink: 0;
+  width: 140rpx;
+  font-size: 26rpx;
+  color: #6b5848;
+}
+
+.delivery-input {
+  flex: 1;
+  min-width: 0;
+  font-size: 28rpx;
+  color: #3a2417;
+  text-align: right;
+}
+
+.delivery-placeholder {
+  color: #c0b0a0;
+}
+
+.delivery-address-field {
+  padding: 20rpx 0 0;
+}
+
+.delivery-address {
+  box-sizing: border-box;
+  width: 100%;
+  height: 130rpx;
+  margin-top: 12rpx;
+  padding: 18rpx 20rpx;
+  font-size: 26rpx;
+  line-height: 1.6;
+  color: #3a2417;
+  background: #fff7ee;
+  border-radius: 16rpx;
+}
+
+.delivery-hint {
+  margin-top: 16rpx;
+  font-size: 22rpx;
+  color: #a08b78;
+}
+
+.delivery-hint-free {
+  color: #e8590c;
+}
+
+/* ========== 优惠券 ========== */
+.coupon-empty {
+  padding: 16rpx 0;
+  font-size: 24rpx;
+  color: #a08b78;
+}
+
+.coupon-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 18rpx 0;
+  border-bottom: 1rpx solid #f7efe7;
+}
+
+.coupon-item-main {
+  flex: 1;
+  min-width: 0;
+}
+
+.coupon-name {
+  font-size: 30rpx;
+  font-weight: 700;
+  color: #e8590c;
+}
+
+.coupon-desc {
+  margin-top: 6rpx;
+  font-size: 22rpx;
+  color: #a08b78;
+}
+
+.coupon-desc-warn {
+  color: #c0392b;
+}
+
+.coupon-btn {
+  flex-shrink: 0;
+  margin-left: 24rpx;
+  padding: 12rpx 32rpx;
+  font-size: 24rpx;
+  color: #ffffff;
+  background: #ff7a00;
+  border-radius: 999rpx;
+}
+
+.coupon-btn-used {
+  color: #e8590c;
+  background: #fff0e0;
+  border: 1rpx solid #ffd8b0;
+}
+
+.coupon-btn-disabled {
+  color: #c0b0a0;
+  background: #f0e6dc;
+}
+
+.coupon-btn-hover {
+  opacity: 0.85;
+  transform: scale(0.98);
+}
+
+.coupon-saved {
+  margin-top: 14rpx;
+  font-size: 22rpx;
+  color: #e8590c;
+}
+
+/* ========== 费用明细 ========== */
+.fee-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14rpx 0;
+  font-size: 26rpx;
+}
+
+.fee-label {
+  color: #6b5848;
+}
+
+.fee-value {
+  color: #3a2417;
+}
+
+.fee-discount {
+  color: #e8590c;
+}
+
+.fee-total {
+  margin-top: 8rpx;
+  padding-top: 18rpx;
+  border-top: 1rpx solid #f3e8dc;
+}
+
+.fee-price {
+  font-size: 36rpx;
+  font-weight: 700;
+  color: #e8590c;
+}
+
+.payment-note {
+  margin-top: 18rpx;
+  padding-top: 18rpx;
+  font-size: 23rpx;
+  line-height: 1.6;
+  color: #8c7b6b;
+  border-top: 1rpx dashed #f0e2d4;
+}
+
+.item {
+  padding: 24rpx 0;
+}
+
+.item-main {
+  display: flex;
+  align-items: center;
+}
+
+.item-emoji {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 80rpx;
+  height: 80rpx;
+  font-size: 44rpx;
+  background: #fff1e3;
+  border-radius: 20rpx;
+}
+
+.item-info {
+  flex: 1;
+  min-width: 0;
+  margin-left: 20rpx;
+}
+
+.item-name {
+  font-size: 30rpx;
+  font-weight: 600;
+}
+
+.item-price {
+  margin-top: 6rpx;
+  font-size: 24rpx;
+  color: #a08b78;
+}
+
+.item-subtotal {
+  margin-left: 16rpx;
+  font-size: 30rpx;
+  font-weight: 700;
+  color: #e8590c;
+}
+
+/* Vant Stepper 所在的这一行，靠右显示 */
+.item-actions {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 16rpx;
+}
+
+.item-divider {
+  height: 1rpx;
+  background: #f3e8dc;
+}
+
+/* 备注输入框 */
+.remark {
+  box-sizing: border-box;
+  width: 100%;
+  height: 140rpx;
+  margin-top: 16rpx;
+  font-size: 26rpx;
+  line-height: 1.6;
+}
+
+.remark-placeholder {
+  color: #c0b0a0;
+}
+
+.remark-count {
+  margin-top: 8rpx;
+  text-align: right;
+  font-size: 22rpx;
+  color: #c0b0a0;
+}
+
+/* 通过 externalClass 改 Vant 提交按钮的颜色（!important 覆盖组件内部样式） */
+.submit-bar-button {
+  background: #ff7a00 !important;
+  border-color: #ff7a00 !important;
+}
+
+/* 空购物车 */
+.empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding-bottom: 220rpx;
+}
+
+.empty-emoji {
+  font-size: 120rpx;
+}
+
+.empty-text {
+  margin-top: 24rpx;
+  font-size: 30rpx;
+  color: #a08b78;
+}
+
+.empty-btn {
+  margin-top: 40rpx;
+  padding: 18rpx 56rpx;
+  font-size: 28rpx;
+  color: #ffffff;
+  background: #ff7a00;
+  border-radius: 999rpx;
+}

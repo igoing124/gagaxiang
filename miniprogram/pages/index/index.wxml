@@ -1,0 +1,226 @@
+<!-- pages/index/index.wxml —— 点单页的结构 -->
+<view class="page">
+  <!-- 顶部横幅 -->
+  <view class="hero">
+    <view class="hero-emoji">🍢</view>
+    <view class="hero-text">
+      <view class="hero-title">嘎嘎香</view>
+      <view class="hero-sub">乐山油炸串串 · 纯正乐山味道</view>
+    </view>
+    <view class="hero-orders-wrap">
+      <view class="hero-orders" bindtap="onOrders">我的订单</view>
+      <view class="hero-orders-tip">在这里点之前的订单</view>
+    </view>
+  </view>
+
+  <view class="tip">点击卡片看详情，用 − / + 调整份数</view>
+
+  <!-- 最近点过：从历史订单里挑最近点过的菜，放在顶部方便复购 -->
+  <view class="recent-section" wx:if="{{recentGoods.length > 0}}">
+    <view class="recent-head">
+      <view class="recent-title">最近点过</view>
+      <view class="recent-sub">点 + 快速加购</view>
+    </view>
+
+    <scroll-view scroll-x class="recent-scroll" enable-flex>
+      <view class="recent-list">
+        <view
+          class="recent-card"
+          wx:for="{{recentGoods}}"
+          wx:key="id"
+          data-id="{{item.id}}"
+          bindtap="onTapGoods"
+        >
+          <view class="recent-count" wx:if="{{item.count > 0}}">{{item.count}}</view>
+          <view class="recent-emoji">{{item.emoji}}</view>
+          <view class="recent-name">{{item.name}}</view>
+          <view class="recent-foot">
+            <view class="recent-price">¥{{item.price}}<text class="recent-unit">/{{item.unit}}</text></view>
+            <view
+              class="recent-add"
+              data-id="{{item.id}}"
+              catchtap="onAdd"
+              hover-class="recent-add-hover"
+            >+</view>
+          </view>
+        </view>
+      </view>
+    </scroll-view>
+  </view>
+
+  <!-- 菜品分类：从菜单的 category 自动生成 -->
+  <view class="category-bar">
+    <view
+      class="category-chip {{currentCategory === item ? 'category-chip-active' : ''}}"
+      wx:for="{{categories}}"
+      wx:key="*this"
+      data-category="{{item}}"
+      bindtap="onCategoryChange"
+    >{{item}}</view>
+  </view>
+
+  <!-- wx:for 会按 list 数组循环生成卡片；list 已经按分类筛选过 -->
+  <view class="goods-list" wx:if="{{list.length > 0}}">
+    <view
+      class="goods-card {{item.soldOut ? 'goods-card-soldout' : ''}}"
+      wx:for="{{list}}"
+      wx:key="id"
+      data-id="{{item.id}}"
+      bindtap="onTapGoods"
+    >
+      <view class="goods-emoji">
+        {{item.emoji}}
+        <!-- 售罄时盖一层半透明遮罩 -->
+        <view class="soldout-mask" wx:if="{{item.soldOut}}">已售罄</view>
+      </view>
+
+      <view class="goods-info">
+        <view class="goods-name-row">
+          <text class="goods-name">{{item.name}}</text>
+          <!-- wx:if：只有 tag 有内容时才显示 -->
+          <text class="goods-tag" wx:if="{{item.tag}}">{{item.tag}}</text>
+        </view>
+        <view class="goods-desc" wx:if="{{item.desc}}">{{item.desc}}</view>
+        <view class="goods-price">¥{{item.price}}<text class="goods-unit">/{{item.unit}}</text></view>
+      </view>
+
+      <view class="goods-right">
+        <!-- 售罄显示灰色按钮；正常商品显示 − 数量 + 步进器 -->
+        <view
+          class="soldout-btn"
+          wx:if="{{item.soldOut}}"
+          catchtap="onSoldOutTap"
+        >售罄</view>
+        <view class="stepper" wx:else catchtap="onStepperStop">
+          <!-- 外层 catchtap：点中间的数字也不会跳详情；− 和 + 各自再阻止一次 -->
+          <view
+            class="stepper-btn stepper-minus {{item.count === 0 ? 'stepper-btn-disabled' : ''}}"
+            data-id="{{item.id}}"
+            catchtap="onMinus"
+            hover-class="stepper-btn-hover"
+          >−</view>
+
+          <view class="stepper-num">{{item.count}}</view>
+
+          <view
+            class="stepper-btn stepper-plus"
+            data-id="{{item.id}}"
+            catchtap="onAdd"
+            hover-class="stepper-btn-hover"
+            hover-stay-time="80"
+          >+</view>
+        </view>
+      </view>
+    </view>
+  </view>
+  <view class="category-empty" wx:elif="{{menuLoading}}">菜单加载中...</view>
+  <view class="category-empty" wx:else>这个分类还没有菜品</view>
+
+  <!-- 底部购物车栏 -->
+  <view class="cart-bar">
+    <view
+      class="cart-info"
+      bindtap="onOpenCart"
+      hover-class="cart-info-hover"
+    >
+      <view class="cart-count">🛒 已选 {{cartCount}} 份 <text class="cart-view-tip" wx:if="{{cartCount > 0}}">查看明细 ›</text></view>
+      <view class="cart-total">
+        合计 <text class="cart-total-num">¥{{totalPrice}}</text>
+      </view>
+    </view>
+
+    <view class="cart-actions">
+      <view class="cart-clear" bindtap="onClear" wx:if="{{cartCount > 0}}">清空</view>
+      <view
+        class="cart-checkout {{cartCount > 0 ? '' : 'cart-checkout-disabled'}}"
+        bindtap="onCheckout"
+        hover-class="{{cartCount > 0 ? 'cart-checkout-hover' : 'none'}}"
+      >去结算</view>
+    </view>
+  </view>
+
+  <!-- 购物车明细弹层 -->
+  <view
+    class="cart-mask"
+    wx:if="{{cartVisible}}"
+    bindtap="onCloseCart"
+    catchtouchmove="onCartStop"
+  ></view>
+
+  <view class="cart-panel" wx:if="{{cartVisible}}" catchtap="onCartStop">
+    <view class="cart-panel-head">
+      <view class="cart-panel-head-left">
+        <view class="cart-panel-title">购物车</view>
+        <view class="cart-panel-sub">已选 {{cartCount}} 份</view>
+      </view>
+      <view
+        class="cart-panel-clear"
+        wx:if="{{cartCount > 0}}"
+        bindtap="onClear"
+        hover-class="cart-panel-clear-hover"
+      >清空</view>
+      <view
+        class="cart-panel-close"
+        bindtap="onCloseCart"
+        hover-class="cart-panel-close-hover"
+      >×</view>
+    </view>
+
+    <!-- 在弹层里把数量减到 0 时显示这个空状态 -->
+    <view class="cart-empty" wx:if="{{cartList.length === 0}}">
+      <view class="cart-empty-emoji">🛒</view>
+      <view class="cart-empty-text">购物车还是空的</view>
+      <view class="cart-empty-close" bindtap="onCloseCart">继续点单</view>
+    </view>
+
+    <scroll-view
+      wx:else
+      scroll-y
+      class="cart-panel-list"
+      style="height: {{cartListHeight}}rpx;"
+    >
+      <view class="cart-item" wx:for="{{cartList}}" wx:key="id">
+        <view class="cart-item-emoji">{{item.emoji}}</view>
+
+        <view class="cart-item-info">
+          <view class="cart-item-name-row">
+            <view class="cart-item-name">{{item.name}}</view>
+            <text class="cart-item-soldout" wx:if="{{item.soldOut}}">已售罄</text>
+          </view>
+          <view class="cart-item-price">¥{{item.price}} / {{item.unit}}</view>
+          <view class="cart-item-subtotal">小计 ¥{{item.subtotal}}</view>
+        </view>
+
+        <view class="cart-item-stepper">
+          <view
+            class="cart-mini-btn cart-mini-minus"
+            data-id="{{item.id}}"
+            catchtap="onMinus"
+            hover-class="cart-mini-hover"
+          >−</view>
+          <view class="cart-mini-num">{{item.count}}</view>
+          <view
+            class="cart-mini-btn cart-mini-plus"
+            wx:if="{{!item.soldOut}}"
+            data-id="{{item.id}}"
+            catchtap="onAdd"
+            hover-class="cart-mini-hover"
+          >+</view>
+          <view wx:else class="cart-mini-btn cart-mini-disabled">+</view>
+        </view>
+      </view>
+    </scroll-view>
+
+    <view class="cart-panel-foot">
+      <view class="cart-panel-total">
+        <text class="cart-panel-total-label">合计</text>
+        <text class="cart-panel-price">¥{{totalPrice}}</text>
+      </view>
+      <view
+        class="cart-panel-checkout {{cartCount > 0 ? '' : 'cart-panel-checkout-disabled'}}"
+        bindtap="onCheckout"
+        hover-class="{{cartCount > 0 ? 'cart-panel-checkout-hover' : 'none'}}"
+      >去结算</view>
+    </view>
+  </view>
+</view>

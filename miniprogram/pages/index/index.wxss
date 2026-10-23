@@ -1,0 +1,735 @@
+/* pages/index/index.wxss —— 点单页的样式（写法就是 CSS，单位推荐用 rpx） */
+
+/* 给底部固定的购物车栏留出位置，避免挡住最后一个商品 */
+page {
+  padding-bottom: 180rpx;
+}
+
+.hero {
+  display: flex;
+  align-items: center;
+  padding: 48rpx 32rpx 44rpx;
+  background: linear-gradient(135deg, #3a2417 0%, #5c3a24 100%);
+  color: #ffffff;
+  border-radius: 0 0 40rpx 40rpx;
+}
+
+.hero-emoji {
+  font-size: 88rpx;
+  line-height: 1;
+  margin-right: 24rpx;
+}
+
+.hero-title {
+  font-size: 48rpx;
+  font-weight: 700;
+  letter-spacing: 2rpx;
+}
+
+.hero-text {
+  flex: 1;
+}
+
+/* 顶部「我的订单」入口 */
+.hero-orders-wrap {
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.hero-orders {
+  flex-shrink: 0;
+  padding: 12rpx 24rpx;
+  font-size: 24rpx;
+  color: #f3d9c4;
+  border: 1rpx solid rgba(243, 217, 196, 0.5);
+  border-radius: 999rpx;
+}
+
+/* 「我的订单」按钮下面的小字提示 */
+.hero-orders-tip {
+  margin-top: 8rpx;
+  font-size: 20rpx;
+  color: #f3d9c4;
+  white-space: nowrap;
+}
+
+.hero-sub {
+  margin-top: 8rpx;
+  font-size: 26rpx;
+  color: #f3d9c4;
+}
+
+.tip {
+  margin: 32rpx 32rpx 8rpx;
+  font-size: 24rpx;
+  color: #a08b78;
+}
+
+/* ========== 最近点过 ========== */
+.recent-section {
+  margin-top: 20rpx;
+}
+
+.recent-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  padding: 0 32rpx;
+}
+
+.recent-title {
+  font-size: 30rpx;
+  font-weight: 700;
+}
+
+.recent-sub {
+  font-size: 22rpx;
+  color: #a08b78;
+}
+
+.recent-scroll {
+  margin-top: 16rpx;
+  white-space: nowrap;
+}
+
+.recent-list {
+  display: flex;
+  padding: 0 32rpx 8rpx;
+}
+
+.recent-card {
+  position: relative;
+  flex-shrink: 0;
+  box-sizing: border-box;
+  width: 220rpx;
+  margin-right: 16rpx;
+  padding: 20rpx;
+  background: #ffffff;
+  border-radius: 24rpx;
+  box-shadow: 0 6rpx 16rpx rgba(58, 36, 23, 0.05);
+}
+
+.recent-count {
+  position: absolute;
+  top: 12rpx;
+  right: 12rpx;
+  min-width: 32rpx;
+  padding: 2rpx 10rpx;
+  text-align: center;
+  font-size: 18rpx;
+  color: #e8590c;
+  background: #fff0e0;
+  border-radius: 999rpx;
+}
+
+.recent-emoji {
+  font-size: 56rpx;
+  line-height: 1.2;
+}
+
+.recent-name {
+  margin-top: 8rpx;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  font-size: 24rpx;
+  font-weight: 600;
+}
+
+.recent-foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 8rpx;
+}
+
+.recent-price {
+  font-size: 24rpx;
+  font-weight: 700;
+  color: #e8590c;
+}
+
+.recent-unit {
+  font-size: 18rpx;
+  font-weight: 400;
+  color: #a08b78;
+}
+
+.recent-add {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 44rpx;
+  height: 44rpx;
+  font-size: 30rpx;
+  line-height: 1;
+  color: #ffffff;
+  background: #ff7a00;
+  border-radius: 50%;
+}
+
+.recent-add-hover {
+  opacity: 0.85;
+  transform: scale(0.94);
+}
+
+/* 菜品分类筛选 */
+.category-bar {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  display: flex;
+  flex-wrap: wrap;
+  padding: 8rpx 32rpx 0;
+  background: #fff8f0;
+}
+
+.category-chip {
+  margin: 0 14rpx 14rpx 0;
+  padding: 12rpx 26rpx;
+  font-size: 24rpx;
+  color: #6b5848;
+  background: #ffffff;
+  border: 1rpx solid #f0e2d4;
+  border-radius: 999rpx;
+}
+
+.category-chip-active {
+  font-weight: 600;
+  color: #ffffff;
+  background: #ff7a00;
+  border-color: #ff7a00;
+  box-shadow: 0 6rpx 14rpx rgba(255, 122, 0, 0.2);
+}
+
+.category-empty {
+  padding: 80rpx 32rpx;
+  text-align: center;
+  font-size: 26rpx;
+  color: #a08b78;
+}
+
+.goods-list {
+  display: flex;
+  flex-direction: column;
+  padding: 16rpx 32rpx 24rpx;
+}
+
+.goods-card {
+  display: flex;
+  align-items: center;
+  margin-bottom: 20rpx;
+  padding: 24rpx;
+  background: #ffffff;
+  border-radius: 28rpx;
+  box-shadow: 0 8rpx 24rpx rgba(58, 36, 23, 0.06);
+}
+
+/* 售罄：把商品信息变淡（保留「售罄」遮罩的高对比） */
+.goods-card-soldout .goods-info {
+  opacity: 0.55;
+}
+
+.goods-emoji {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 120rpx;
+  height: 120rpx;
+  font-size: 64rpx;
+  background: #fff1e3;
+  border-radius: 24rpx;
+  overflow: hidden;
+}
+
+/* 盖在商品图标上的「已售罄」遮罩 */
+.soldout-mask {
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 24rpx;
+  letter-spacing: 2rpx;
+  color: #ffffff;
+  background: rgba(58, 36, 23, 0.55);
+}
+
+.goods-info {
+  flex: 1;
+  min-width: 0;
+  margin-left: 24rpx;
+}
+
+.goods-name-row {
+  display: flex;
+  align-items: center;
+}
+
+.goods-name {
+  font-size: 32rpx;
+  font-weight: 600;
+}
+
+.goods-tag {
+  margin-left: 12rpx;
+  padding: 2rpx 10rpx;
+  font-size: 20rpx;
+  color: #e8590c;
+  background: #fff0e0;
+  border: 1rpx solid #ffd8b0;
+  border-radius: 8rpx;
+}
+
+.goods-desc {
+  margin-top: 8rpx;
+  font-size: 24rpx;
+  color: #a08b78;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.goods-price {
+  margin-top: 12rpx;
+  font-size: 32rpx;
+  font-weight: 700;
+  color: #e8590c;
+}
+
+/* 价格后面的单位：/串、/3串 */
+.goods-unit {
+  margin-left: 4rpx;
+  font-size: 22rpx;
+  font-weight: 400;
+  color: #a08b78;
+}
+
+.goods-right {
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+  margin-left: 16rpx;
+}
+
+/* 商品数量步进器：− 数量 + */
+.stepper {
+  display: flex;
+  align-items: center;
+  padding: 4rpx;
+  background: #fff1e3;
+  border-radius: 999rpx;
+}
+
+.stepper-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 56rpx;
+  height: 56rpx;
+  font-size: 38rpx;
+  line-height: 1;
+  color: #ffffff;
+  background: #ff7a00;
+  border-radius: 50%;
+}
+
+/* 减号用白底描边，和加号区分主次 */
+.stepper-minus {
+  box-sizing: border-box;
+  color: #e8590c;
+  background: #ffffff;
+  border: 1rpx solid #ffd8b0;
+}
+
+/* 数量为 0 时减号置灰；JS 里也有兜底，不会减成负数 */
+.stepper-btn-disabled {
+  color: #c0b0a0;
+  background: #f0e6dc;
+  border-color: #e6d8ca;
+}
+
+.stepper-num {
+  min-width: 48rpx;
+  text-align: center;
+  font-size: 28rpx;
+  font-weight: 600;
+  color: #3a2417;
+}
+
+.stepper-btn-hover {
+  opacity: 0.8;
+  transform: scale(0.94);
+}
+
+/* 售罄按钮：灰色、不能加购 */
+.soldout-btn {
+  width: 88rpx;
+  height: 56rpx;
+  line-height: 56rpx;
+  text-align: center;
+  font-size: 22rpx;
+  color: #8c7b6b;
+  background: #f0e6dc;
+  border-radius: 999rpx;
+}
+
+.cart-bar {
+  position: fixed;
+  left: 32rpx;
+  right: 32rpx;
+  bottom: 24rpx;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20rpx 20rpx 20rpx 36rpx;
+  color: #ffffff;
+  background: #3a2417;
+  border-radius: 999rpx;
+  box-shadow: 0 16rpx 32rpx rgba(58, 36, 23, 0.25);
+}
+
+.cart-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.cart-info-hover {
+  opacity: 0.8;
+}
+
+.cart-count {
+  font-size: 24rpx;
+  color: #f3d9c4;
+}
+
+/* 购物车栏上的「查看明细」提示 */
+.cart-view-tip {
+  margin-left: 8rpx;
+  font-size: 22rpx;
+  color: #ffb066;
+}
+
+.cart-total {
+  font-size: 28rpx;
+  margin-top: 4rpx;
+}
+
+.cart-total-num {
+  font-size: 36rpx;
+  font-weight: 700;
+  color: #ffb066;
+}
+
+.cart-actions {
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+}
+
+/* 清空：低调的文字按钮 */
+.cart-clear {
+  margin-right: 24rpx;
+  font-size: 26rpx;
+  color: #d8c4b0;
+}
+
+/* 去结算：主按钮 */
+.cart-checkout {
+  padding: 18rpx 36rpx;
+  font-size: 28rpx;
+  font-weight: 600;
+  color: #ffffff;
+  background: #ff7a00;
+  border-radius: 999rpx;
+}
+
+.cart-checkout-hover {
+  transform: scale(0.97);
+  opacity: 0.9;
+}
+
+/* 购物车为空时，结算按钮置灰 */
+.cart-checkout-disabled {
+  color: #a08b78;
+  background: #5c4a3c;
+}
+
+/* ========== 购物车明细弹层 ========== */
+.cart-mask {
+  position: fixed;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  background: rgba(58, 36, 23, 0.45);
+  z-index: 1000;
+  animation: cart-fade-in 0.2s ease;
+}
+
+.cart-panel {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 1001;
+  padding-bottom: env(safe-area-inset-bottom);
+  background: #ffffff;
+  border-radius: 36rpx 36rpx 0 0;
+  overflow: hidden;
+  animation: cart-slide-up 0.25s ease;
+}
+
+@keyframes cart-fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes cart-slide-up {
+  from {
+    transform: translateY(100%);
+  }
+  to {
+    transform: translateY(0);
+  }
+}
+
+.cart-panel-head {
+  display: flex;
+  align-items: center;
+  padding: 28rpx 32rpx;
+  border-bottom: 1rpx solid #f3e8dc;
+}
+
+.cart-panel-head-left {
+  flex: 1;
+  min-width: 0;
+}
+
+.cart-panel-title {
+  font-size: 32rpx;
+  font-weight: 700;
+}
+
+.cart-panel-sub {
+  margin-top: 4rpx;
+  font-size: 22rpx;
+  color: #a08b78;
+}
+
+.cart-panel-clear {
+  margin-right: 28rpx;
+  font-size: 24rpx;
+  color: #c0392b;
+}
+
+.cart-panel-clear-hover {
+  opacity: 0.7;
+}
+
+.cart-panel-close {
+  padding: 0 4rpx;
+  font-size: 44rpx;
+  line-height: 1;
+  color: #a08b78;
+}
+
+.cart-panel-close-hover {
+  opacity: 0.7;
+}
+
+.cart-panel-list {
+  box-sizing: border-box;
+  padding: 0 32rpx;
+}
+
+.cart-item {
+  display: flex;
+  align-items: center;
+  padding: 20rpx 0;
+  border-bottom: 1rpx solid #f7efe7;
+}
+
+.cart-item-emoji {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 80rpx;
+  height: 80rpx;
+  font-size: 44rpx;
+  background: #fff1e3;
+  border-radius: 20rpx;
+}
+
+.cart-item-info {
+  flex: 1;
+  min-width: 0;
+  margin-left: 20rpx;
+}
+
+.cart-item-name-row {
+  display: flex;
+  align-items: center;
+}
+
+.cart-item-name {
+  flex: 1;
+  min-width: 0;
+  font-size: 28rpx;
+  font-weight: 600;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.cart-item-soldout {
+  flex-shrink: 0;
+  margin-left: 8rpx;
+  padding: 2rpx 8rpx;
+  font-size: 18rpx;
+  color: #8c7b6b;
+  background: #f0e6dc;
+  border-radius: 6rpx;
+}
+
+.cart-item-price {
+  margin-top: 4rpx;
+  font-size: 22rpx;
+  color: #a08b78;
+}
+
+.cart-item-subtotal {
+  margin-top: 4rpx;
+  font-size: 22rpx;
+  color: #e8590c;
+}
+
+.cart-item-stepper {
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+  margin-left: 16rpx;
+}
+
+.cart-mini-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 48rpx;
+  height: 48rpx;
+  font-size: 34rpx;
+  line-height: 1;
+  border-radius: 50%;
+}
+
+.cart-mini-minus {
+  box-sizing: border-box;
+  color: #e8590c;
+  background: #ffffff;
+  border: 1rpx solid #ffd8b0;
+}
+
+.cart-mini-plus {
+  color: #ffffff;
+  background: #ff7a00;
+}
+
+.cart-mini-disabled {
+  color: #c0b0a0;
+  background: #f0e6dc;
+}
+
+.cart-mini-num {
+  min-width: 40rpx;
+  text-align: center;
+  font-size: 26rpx;
+  font-weight: 600;
+}
+
+.cart-mini-hover {
+  opacity: 0.8;
+  transform: scale(0.94);
+}
+
+/* 弹层里的空状态 */
+.cart-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 70rpx 0 50rpx;
+}
+
+.cart-empty-emoji {
+  font-size: 96rpx;
+}
+
+.cart-empty-text {
+  margin-top: 16rpx;
+  font-size: 26rpx;
+  color: #a08b78;
+}
+
+.cart-empty-close {
+  margin-top: 28rpx;
+  padding: 14rpx 44rpx;
+  font-size: 26rpx;
+  color: #ffffff;
+  background: #ff7a00;
+  border-radius: 999rpx;
+}
+
+.cart-panel-foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 24rpx 32rpx 32rpx;
+  background: #ffffff;
+  border-top: 1rpx solid #f3e8dc;
+}
+
+.cart-panel-total {
+  display: flex;
+  align-items: baseline;
+}
+
+.cart-panel-total-label {
+  margin-right: 10rpx;
+  font-size: 24rpx;
+  color: #a08b78;
+}
+
+.cart-panel-price {
+  font-size: 40rpx;
+  font-weight: 700;
+  color: #e8590c;
+}
+
+.cart-panel-checkout {
+  padding: 18rpx 48rpx;
+  font-size: 28rpx;
+  font-weight: 600;
+  color: #ffffff;
+  background: #ff7a00;
+  border-radius: 999rpx;
+}
+
+.cart-panel-checkout-hover {
+  opacity: 0.9;
+  transform: scale(0.98);
+}
+
+.cart-panel-checkout-disabled {
+  background: #c0b0a0;
+}

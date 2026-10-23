@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#3a2417">
+  <meta name="robots" content="noindex, nofollow">
+  <title>商家后台 · 嘎嘎香</title>
+  <link rel="stylesheet" href="/admin.css?v=20261024-1">
+</head>
+<body>
+  <!-- 登录 -->
+  <section id="loginView" class="login-view">
+    <div class="login-card">
+      <div class="login-brand">嘎嘎香</div>
+      <h1>商家后台</h1>
+      <p class="login-sub">乐山油炸串串 · 外卖订单管理</p>
+
+      <form id="loginForm" class="login-form">
+        <label for="passwordInput">管理口令</label>
+        <input id="passwordInput" type="password" autocomplete="current-password" placeholder="请输入管理口令" required>
+        <button id="loginBtn" class="primary-button" type="submit">登录</button>
+      </form>
+
+      <p id="loginError" class="error-text"></p>
+      <a class="back-link" href="/">← 返回顾客点单页</a>
+    </div>
+  </section>
+
+  <!-- 后台 -->
+  <section id="dashboardView" class="dashboard hidden">
+    <header class="admin-header">
+      <div class="admin-title-wrap">
+        <h1>嘎嘎香 · 商家后台</h1>
+        <p id="lastRefresh" class="admin-sub">正在加载...</p>
+      </div>
+      <div class="header-actions">
+        <button id="exportBtn" class="ghost-button" type="button">备份数据</button>
+        <button id="testSoundBtn" class="ghost-button" type="button">测试提示音</button>
+        <button id="refreshBtn" class="ghost-button" type="button">刷新</button>
+        <button id="logoutBtn" class="ghost-button danger" type="button">退出</button>
+      </div>
+    </header>
+
+    <nav class="admin-tabs" aria-label="后台功能">
+      <button class="admin-tab active" data-tab="orders" type="button">
+        订单 <span id="pendingBadge" class="tab-badge">0</span>
+      </button>
+      <button class="admin-tab" data-tab="menu" type="button">菜品管理</button>
+      <button class="admin-tab" data-tab="coupons" type="button">优惠券</button>
+    </nav>
+
+    <!-- 订单 -->
+    <main id="ordersPanel" class="admin-main">
+      <div class="filter-bar" id="orderFilters">
+        <button class="filter-chip active" data-filter="all" type="button">全部</button>
+        <button class="filter-chip" data-filter="pending" type="button">待接单 <span id="filterPendingCount">0</span></button>
+        <button class="filter-chip" data-filter="making" type="button">制作中</button>
+        <button class="filter-chip" data-filter="completed" type="button">已完成</button>
+        <button class="filter-chip" data-filter="cancelled" type="button">已取消</button>
+      </div>
+
+      <p class="panel-hint order-detail-hint">点击订单卡片可查看完整配送信息、金额明细和订单时间。</p>
+      <div id="ordersList" class="orders-list"></div>
+    </main>
+
+    <!-- 菜品管理 -->
+    <main id="menuPanel" class="admin-main hidden">
+      <div class="panel-toolbar">
+        <p class="panel-hint">可以改价、上新、售罄和上下架；顾客端 15 秒内同步。</p>
+        <button id="addDishBtn" class="small-button primary" type="button">+ 新增菜品</button>
+      </div>
+
+      <div class="admin-menu-search">
+        <span class="admin-search-icon" aria-hidden="true">🔍</span>
+        <input id="dishSearchInput" type="search" placeholder="搜索菜品名称、分类或标签" autocomplete="off" aria-label="搜索菜品">
+      </div>
+
+      <form id="dishForm" class="edit-form hidden">
+        <h2 id="dishFormTitle">新增菜品</h2>
+        <input id="dishId" type="hidden">
+
+        <div class="form-grid">
+          <label class="form-field">
+            <span>名称 *</span>
+            <input id="dishName" maxlength="30" placeholder="例如 牛肉串" required>
+          </label>
+          <label class="form-field">
+            <span>分类 *</span>
+            <input id="dishCategory" maxlength="20" placeholder="例如 荤菜类" required>
+          </label>
+          <label class="form-field">
+            <span>价格（元）*</span>
+            <input id="dishPrice" type="number" min="0.01" step="0.01" placeholder="例如 0.7" required>
+          </label>
+          <label class="form-field">
+            <span>单位</span>
+            <input id="dishUnit" maxlength="10" placeholder="串 / 份 / 3串">
+          </label>
+          <label class="form-field">
+            <span>图标</span>
+            <input id="dishEmoji" maxlength="4" placeholder="🍢">
+          </label>
+          <label class="form-field">
+            <span>标签</span>
+            <input id="dishTag" maxlength="10" placeholder="招牌 / 新品">
+          </label>
+        </div>
+
+        <label class="form-field full">
+          <span>描述</span>
+          <input id="dishDesc" maxlength="80" placeholder="选填">
+        </label>
+
+        <div class="check-row">
+          <label><input id="dishSoldOut" type="checkbox"> 售罄</label>
+          <label><input id="dishEnabled" type="checkbox" checked> 上架</label>
+        </div>
+
+        <div class="form-actions">
+          <button id="cancelDishBtn" class="ghost-button" type="button">取消</button>
+          <button id="saveDishBtn" class="small-button primary" type="submit">保存</button>
+        </div>
+      </form>
+
+      <div id="adminMenuList" class="admin-menu-list"></div>
+    </main>
+
+    <!-- 优惠券 -->
+    <main id="couponsPanel" class="admin-main hidden">
+      <div class="panel-toolbar">
+        <p class="panel-hint">新人券默认满 50 减 5，仅在首单可用；手动券按顾客手机号精准发放到对应账号。</p>
+        <button id="addCouponBtn" class="small-button primary" type="button">+ 新增优惠券</button>
+      </div>
+
+      <form id="couponForm" class="edit-form hidden">
+        <h2 id="couponFormTitle">新增优惠券</h2>
+        <input id="couponId" type="hidden">
+
+        <div class="form-grid">
+          <label class="form-field">
+            <span>名称 *</span>
+            <input id="couponName" maxlength="20" placeholder="例如 新人首单券" required>
+          </label>
+          <label class="form-field">
+            <span>门槛（元）*</span>
+            <input id="couponThreshold" type="number" min="0.01" step="0.01" placeholder="50" required>
+          </label>
+          <label class="form-field">
+            <span>优惠（元）*</span>
+            <input id="couponDiscount" type="number" min="0.01" step="0.01" placeholder="5" required>
+          </label>
+        </div>
+
+        <div class="check-row">
+          <label><input id="couponAutoIssue" type="checkbox"> 新用户自动发</label>
+          <label><input id="couponOnlyFirstOrder" type="checkbox"> 仅限首单</label>
+          <label><input id="couponEnabled" type="checkbox" checked> 启用</label>
+        </div>
+
+        <div class="form-actions">
+          <button id="cancelCouponBtn" class="ghost-button" type="button">取消</button>
+          <button id="saveCouponBtn" class="small-button primary" type="submit">保存</button>
+        </div>
+      </form>
+
+      <div id="adminCouponList" class="admin-coupon-list"></div>
+
+      <section class="issue-card">
+        <h2>发放优惠券</h2>
+        <p class="panel-hint">输入顾客登录时绑定的手机号，优惠券会直接发到该账号；同一张券不会重复发。</p>
+
+        <div class="form-grid">
+          <label class="form-field">
+            <span>选择优惠券</span>
+            <select id="couponIssueTemplate"></select>
+          </label>
+          <label class="form-field">
+            <span>顾客手机号</span>
+            <input id="couponIssuePhone" type="tel" inputmode="numeric" maxlength="11" placeholder="例如 13800000000">
+          </label>
+        </div>
+
+        <div class="form-actions">
+          <button id="issueToPhoneBtn" class="small-button primary" type="button">发给该手机号</button>
+        </div>
+
+        <h3 class="subheading">已登录顾客</h3>
+        <div id="adminCustomers" class="customer-list"></div>
+      </section>
+
+      <section class="issue-card">
+        <h2>已发放记录</h2>
+        <div id="adminIssuedCoupons" class="issued-list"></div>
+      </section>
+    </main>
+  </section>
+
+  <!-- 订单详情 -->
+  <div id="orderDetailOverlay" class="overlay hidden" aria-hidden="true">
+    <section class="detail-modal" role="dialog" aria-modal="true" aria-labelledby="orderDetailTitle">
+      <header class="detail-header">
+        <h2 id="orderDetailTitle">订单详情</h2>
+        <button id="closeOrderDetailBtn" class="modal-close" type="button" aria-label="关闭">×</button>
+      </header>
+      <div id="orderDetailBody" class="detail-body"></div>
+    </section>
+  </div>
+
+  <div id="toast" class="toast hidden" role="status"></div>
+
+  <script src="/admin.js?v=20261024-1"></script>
+</body>
+</html>

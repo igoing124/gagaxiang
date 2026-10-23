@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+  <meta name="theme-color" content="#3a2417">
+  <meta name="format-detection" content="telephone=no">
+  <title>嘎嘎香 乐山油炸串串 · 外卖点单</title>
+  <link rel="stylesheet" href="/style.css?v=20261024-1">
+</head>
+<body>
+  <!-- 登录 / 首次资料设置 -->
+  <section id="authView" class="auth-view">
+    <div class="auth-card">
+      <div id="authLoginStep">
+        <div class="auth-brand">嘎嘎香</div>
+        <h1>乐山油炸串串</h1>
+        <p class="auth-sub">外卖点单</p>
+        <div class="auth-hero" aria-hidden="true">🍢</div>
+        <p id="entryStatus" class="auth-desc">正在进入点单页面...</p>
+        <button id="entryRetryBtn" class="primary-button wide hidden" type="button">重新进入</button>
+        <p id="authError" class="auth-error" role="alert"></p>
+      </div>
+
+      <div id="authProfileStep" class="hidden">
+        <div class="auth-brand">嘎嘎香</div>
+        <h2>设置昵称和头像</h2>
+        <p class="auth-hint danger">昵称和头像首次设置后不可修改，请确认后再提交</p>
+
+        <div class="avatar-preview-wrap">
+          <div id="avatarPreview" class="avatar avatar-xl">🍢</div>
+          <button id="avatarUploadBtn" class="text-button" type="button">上传头像</button>
+          <input id="avatarFileInput" type="file" accept="image/*" hidden>
+        </div>
+
+        <div id="avatarPresets" class="avatar-presets" aria-label="选择头像"></div>
+
+        <label class="field">
+          <span class="field-label">昵称 <em>*</em></span>
+          <input id="nicknameInput" type="text" maxlength="16" placeholder="给自己起个昵称" autocomplete="nickname">
+        </label>
+
+        <label class="field">
+          <span class="field-label">手机号 <em>*</em></span>
+          <input id="authPhoneInput" type="tel" inputmode="numeric" maxlength="11" placeholder="11 位手机号" autocomplete="tel">
+          <small class="field-hint">用于登录账号、商家联系和优惠券发放，提交后不可修改</small>
+        </label>
+
+        <button id="saveProfileBtn" class="primary-button wide" type="button">完成，开始点单</button>
+        <p id="profileError" class="auth-error" role="alert"></p>
+      </div>
+    </div>
+  </section>
+
+  <div id="phoneFrame" class="phone-frame hidden">
+    <header class="shop-header">
+      <div class="shop-top">
+        <div class="shop-title-wrap">
+          <h1 id="storeName">嘎嘎香 乐山油炸串串</h1>
+          <p id="storeHours" class="shop-hours">每天 17:00 - 次日 00:30</p>
+        </div>
+        <button id="openOrdersBtn" class="user-chip" type="button" aria-label="我的订单">
+          <span id="headerAvatar" class="avatar avatar-sm">🍢</span>
+          <span id="headerNickname">我的订单</span>
+        </button>
+      </div>
+      <div id="storeNotice" class="notice-bar">外卖配送，提交订单后商家会电话联系确认，线下支付</div>
+    </header>
+
+    <div class="menu-tools">
+      <div class="menu-search">
+        <span class="search-icon" aria-hidden="true">🔍</span>
+        <input id="menuSearchInput" type="search" placeholder="搜索菜品名称、标签或分类" autocomplete="off" aria-label="搜索菜品">
+        <button id="clearMenuSearchBtn" class="search-clear hidden" type="button" aria-label="清除搜索">×</button>
+      </div>
+      <section id="recommendationArea" class="recommendation-area hidden" aria-label="推荐菜品"></section>
+    </div>
+
+    <nav id="categoryBar" class="category-bar" aria-label="菜品分类"></nav>
+
+    <main id="menuList" class="menu-list" aria-live="polite"></main>
+    <div id="menuLoading" class="menu-loading">菜单加载中...</div>
+
+    <footer class="cart-bar">
+      <button id="cartSummaryBtn" class="cart-summary" type="button">
+        <span class="cart-badge" id="cartBadge">0</span>
+        <span class="cart-total-label">合计</span>
+        <span class="cart-total" id="cartTotal">¥0.00</span>
+      </button>
+      <button id="checkoutBtn" class="checkout-button" type="button" disabled>去结算</button>
+    </footer>
+  </div>
+
+  <!-- 购物车弹层 -->
+  <div id="cartOverlay" class="overlay hidden" aria-hidden="true">
+    <section class="sheet cart-sheet" role="dialog" aria-modal="true" aria-labelledby="cartTitle">
+      <header class="sheet-header">
+        <h2 id="cartTitle">已选菜品</h2>
+        <button id="clearCartBtn" class="text-button danger" type="button">清空</button>
+      </header>
+      <div id="cartItemList" class="cart-item-list"></div>
+      <div class="sheet-footer">
+        <span>合计 <strong id="sheetTotal">¥0.00</strong></span>
+        <button id="sheetCheckoutBtn" class="primary-button" type="button">去结算</button>
+      </div>
+      <button id="closeCartBtn" class="sheet-close" type="button" aria-label="关闭">×</button>
+    </section>
+  </div>
+
+  <!-- 结算页 -->
+  <section id="checkoutView" class="view hidden" aria-hidden="true">
+    <header class="view-header">
+      <button class="back-button" id="checkoutBackBtn" type="button" aria-label="返回">‹</button>
+      <h2>确认订单</h2>
+      <span class="header-placeholder"></span>
+    </header>
+    <div class="view-body">
+      <div class="card">
+        <h3 class="card-title">配送信息</h3>
+
+        <label class="field">
+          <span class="field-label">收货人 <em>*</em></span>
+          <input id="recipientNameInput" type="text" maxlength="20" placeholder="收货人姓名" autocomplete="name">
+        </label>
+
+        <label class="field">
+          <span class="field-label">手机号 <em>*</em></span>
+          <input id="phoneInput" type="tel" inputmode="numeric" maxlength="11" placeholder="11 位手机号" autocomplete="tel">
+        </label>
+
+        <label class="field">
+          <span class="field-label address-label">
+            <span>配送地址 <em>*</em></span>
+            <button id="locateBtn" class="inline-locate" type="button">📍 自动定位</button>
+          </span>
+          <textarea id="addressInput" maxlength="200" rows="3" placeholder="街道、小区、楼栋、门牌号" autocomplete="street-address"></textarea>
+          <small id="locateHint" class="field-hint">定位后请补充楼栋和门牌号；定位需要浏览器允许位置权限</small>
+        </label>
+
+        <label class="field">
+          <span class="field-label">备注 <small>选填</small></span>
+          <textarea id="noteInput" maxlength="100" rows="2" placeholder="口味、忌口等"></textarea>
+        </label>
+      </div>
+
+      <div class="card">
+        <h3 class="card-title">优惠券</h3>
+        <div id="couponList" class="coupon-list"></div>
+        <p id="couponEmpty" class="coupon-empty">暂无可用优惠券</p>
+      </div>
+
+      <div class="card">
+        <h3 class="card-title">订单明细</h3>
+        <div id="checkoutItems" class="checkout-items"></div>
+        <div class="checkout-total-row">
+          <span>商品小计</span>
+          <strong id="checkoutSubtotal">¥0.00</strong>
+        </div>
+        <div class="checkout-total-row">
+          <span>配送费</span>
+          <strong id="checkoutDeliveryFee">¥3.00</strong>
+        </div>
+        <p id="deliveryFeeHint" class="delivery-fee-hint"></p>
+        <div id="checkoutDiscountRow" class="checkout-total-row discount-row hidden">
+          <span>优惠券</span>
+          <strong id="checkoutDiscount">-¥0.00</strong>
+        </div>
+        <div class="checkout-total-row total-row">
+          <span>合计</span>
+          <strong id="checkoutTotal">¥0.00</strong>
+        </div>
+        <p class="pay-note">提交后商家会电话联系确认，线下支付</p>
+      </div>
+
+      <button id="submitOrderBtn" class="primary-button wide" type="button">提交订单</button>
+      <p class="form-hint">订单金额以商家确认为准</p>
+    </div>
+  </section>
+
+  <!-- 下单成功 / 订单状态 -->
+  <section id="successView" class="view hidden" aria-hidden="true">
+    <header class="view-header">
+      <button class="back-button" id="successBackBtn" type="button" aria-label="返回">‹</button>
+      <h2>订单详情</h2>
+      <button id="successRefreshBtn" class="text-button" type="button">刷新</button>
+    </header>
+    <div class="view-body">
+      <div class="success-hero">
+        <p class="success-label">订单号</p>
+        <div id="pickupNo" class="pickup-no">A001</div>
+        <p id="successTip" class="success-tip">订单已提交，等待商家接单</p>
+        <span id="statusBadge" class="status-badge status-pending">待接单</span>
+      </div>
+
+      <div class="card">
+        <div id="successInfo" class="info-lines"></div>
+      </div>
+
+      <div class="card">
+        <h3 class="card-title">菜品明细</h3>
+        <div id="successItems" class="order-items"></div>
+        <div class="checkout-total-row">
+          <span>商品小计</span>
+          <strong id="successSubtotal">¥0.00</strong>
+        </div>
+        <div class="checkout-total-row">
+          <span>配送费</span>
+          <strong id="successDeliveryFee">¥0.00</strong>
+        </div>
+        <div id="successDiscountRow" class="checkout-total-row discount-row hidden">
+          <span>优惠券</span>
+          <strong id="successDiscount">-¥0.00</strong>
+        </div>
+        <div class="checkout-total-row total-row">
+          <span>合计</span>
+          <strong id="successTotal">¥0.00</strong>
+        </div>
+      </div>
+
+      <p class="poll-hint">状态每 10 秒自动刷新</p>
+      <button id="continueOrderBtn" class="secondary-button wide" type="button">继续点单</button>
+      <button id="successMyOrdersBtn" class="text-button wide" type="button">查看我的订单</button>
+    </div>
+  </section>
+
+  <!-- 我的订单 -->
+  <section id="ordersView" class="view hidden" aria-hidden="true">
+    <header class="view-header">
+      <button class="back-button" id="ordersBackBtn" type="button" aria-label="返回">‹</button>
+      <h2>我的订单</h2>
+      <span class="header-placeholder"></span>
+    </header>
+    <div class="view-body">
+      <div class="profile-card">
+        <div id="profileAvatar" class="avatar avatar-lg">🍢</div>
+        <div class="profile-main">
+          <div id="profileNickname" class="profile-nickname">顾客</div>
+          <div id="profilePhone" class="profile-phone"></div>
+        </div>
+        <span class="locked-badge">资料已锁定</span>
+      </div>
+      <div id="ordersList" class="orders-list"></div>
+    </div>
+  </section>
+
+  <div id="toast" class="toast hidden" role="status"></div>
+
+  <script src="/app.js?v=20261024-1"></script>
+</body>
+</html>

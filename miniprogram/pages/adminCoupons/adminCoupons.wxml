@@ -1,0 +1,131 @@
+<!-- pages/adminCoupons/adminCoupons.wxml —— 商家发券 -->
+<view class="page">
+  <view class="page-head">
+    <view class="page-title">商家发券</view>
+    <view class="head-link" wx:if="{{isAdmin}}" bindtap="onOpenOrders">订单管理 ›</view>
+  </view>
+
+  <view class="state-card" wx:if="{{loading}}">加载中...</view>
+
+  <view class="state-card" wx:elif="{{!cloudEnabled}}">
+    <view class="state-title">云开发还没有连接</view>
+    <view class="state-text">请先配置云环境、部署 api 云函数，再进入本页。</view>
+  </view>
+
+  <block wx:elif="{{isAdmin}}">
+    <!-- 新建 / 编辑优惠券 -->
+    <view class="card">
+      <view class="card-title">{{editing ? '编辑优惠券' : '新建优惠券'}}</view>
+
+      <view class="form-row">
+        <text class="form-label">名称</text>
+        <input class="form-input" value="{{form.name}}" placeholder="例如 新人首单券" bindinput="onNameInput" />
+      </view>
+
+      <view class="form-row">
+        <text class="form-label">满多少元</text>
+        <input class="form-input" type="digit" value="{{form.threshold}}" placeholder="例如 50" bindinput="onThresholdInput" />
+      </view>
+
+      <view class="form-row">
+        <text class="form-label">减多少元</text>
+        <input class="form-input" type="digit" value="{{form.discount}}" placeholder="例如 5" bindinput="onDiscountInput" />
+      </view>
+
+      <view class="form-row">
+        <text class="form-label">新人自动发放</text>
+        <switch checked="{{form.autoIssue}}" bindchange="onAutoIssueChange" color="#ff7a00" />
+      </view>
+
+      <view class="form-row">
+        <text class="form-label">仅限首单</text>
+        <switch checked="{{form.onlyFirstOrder}}" bindchange="onOnlyFirstOrderChange" color="#ff7a00" />
+      </view>
+
+      <view class="form-row">
+        <text class="form-label">启用</text>
+        <switch checked="{{form.enabled}}" bindchange="onEnabledChange" color="#ff7a00" />
+      </view>
+
+      <view class="form-actions">
+        <view class="btn-ghost" bindtap="onNewCoupon">新建</view>
+        <view class="btn-primary {{saving ? 'btn-disabled' : ''}}" bindtap="onSaveCoupon">{{saving ? '保存中...' : '保存'}}</view>
+      </view>
+    </view>
+
+    <!-- 优惠券模板列表 -->
+    <view class="card">
+      <view class="card-title">优惠券模板</view>
+
+      <view class="template-row" wx:for="{{templates}}" wx:key="couponId">
+        <view class="template-main">
+          <view class="template-name">{{item.name}}</view>
+          <view class="template-desc">满 ¥{{item.threshold}} 减 ¥{{item.discount}} · {{item.autoIssue === 'newUser' ? '新人自动发' : '手动发放'}} · {{item.enabled ? '启用' : '停用'}}</view>
+        </view>
+        <view class="template-actions">
+          <view class="mini-btn" data-id="{{item.couponId}}" bindtap="onEditCoupon">编辑</view>
+          <view class="mini-btn mini-btn-warn" data-id="{{item.couponId}}" bindtap="onToggleEnabled">{{item.enabled ? '停用' : '启用'}}</view>
+        </view>
+      </view>
+
+      <view class="empty-text" wx:if="{{templates.length === 0}}">还没有优惠券模板</view>
+    </view>
+
+    <!-- 发放优惠券 -->
+    <view class="card">
+      <view class="card-title">发放优惠券</view>
+      <view class="issue-hint">先选择一张券，再发给指定用户或全部用户。</view>
+
+      <view class="template-chips">
+        <view
+          class="template-chip {{selectedTemplateId === item.couponId ? 'template-chip-active' : ''}}"
+          wx:for="{{templates}}"
+          wx:key="couponId"
+          data-id="{{item.couponId}}"
+          bindtap="onSelectTemplate"
+        >{{item.name}}</view>
+      </view>
+
+      <input
+        class="issue-input"
+        value="{{issueOpenid}}"
+        placeholder="指定用户 openid（选填）"
+        bindinput="onIssueOpenidInput"
+      />
+
+      <view class="form-actions">
+        <view class="btn-ghost" bindtap="onIssueToUser">发给该用户</view>
+        <view class="btn-primary {{issuing ? 'btn-disabled' : ''}}" bindtap="onIssueToAll">{{issuing ? '发放中...' : '发给全部用户'}}</view>
+      </view>
+    </view>
+
+    <!-- 用户列表 -->
+    <view class="card">
+      <view class="card-title">用户</view>
+
+      <view
+        class="user-row"
+        wx:for="{{users}}"
+        wx:key="openid"
+        data-openid="{{item.openid}}"
+        bindtap="onPickUser"
+      >
+        <view class="user-main">
+          <view class="user-name">{{item.nickName || '未设置昵称'}}</view>
+          <view class="user-id">{{item.openid}}</view>
+        </view>
+        <view class="mini-btn">填入</view>
+      </view>
+
+      <view class="empty-text" wx:if="{{users.length === 0}}">还没有用户登录过</view>
+    </view>
+  </block>
+
+  <view class="state-card" wx:else>
+    <view class="state-title">没有商家权限</view>
+    <view class="state-text">当前用户编号：</view>
+    <text class="openid" user-select="true">{{openid}}</text>
+    <view class="copy-btn" wx:if="{{openid}}" bindtap="onCopyOpenid">复制 openid</view>
+    <view class="state-text">请到云开发控制台 → 数据库 → config 集合 → admin 文档，把上面的编号加到 openids 数组里，然后重新进入本页。</view>
+  </view>
+</view>

@@ -1,0 +1,475 @@
+// h5-order/data/menu.js
+// 从 ..miniprogramdatagoods.js 复制而来，共 47 道菜。
+// 如果小程序菜单有改动，重新运行 h5-order/tools/sync-menu.js 同步。
+module.exports = [
+  {
+    "id": "wo_sun",
+    "emoji": "🥬",
+    "name": "莴笋",
+    "category": "素菜类",
+    "desc": "",
+    "price": 0.7,
+    "unit": "串",
+    "tag": ""
+  },
+  {
+    "id": "bao_cai",
+    "emoji": "🥬",
+    "name": "包菜",
+    "category": "素菜类",
+    "desc": "",
+    "price": 0.7,
+    "unit": "串",
+    "tag": ""
+  },
+  {
+    "id": "wa_wa_cai",
+    "emoji": "🥬",
+    "name": "娃娃菜",
+    "category": "素菜类",
+    "desc": "",
+    "price": 0.7,
+    "unit": "串",
+    "tag": ""
+  },
+  {
+    "id": "ping_gu",
+    "emoji": "🍄",
+    "name": "平菇",
+    "category": "素菜类",
+    "desc": "",
+    "price": 0.7,
+    "unit": "串",
+    "tag": ""
+  },
+  {
+    "id": "hua_cai",
+    "emoji": "🥦",
+    "name": "花菜",
+    "category": "素菜类",
+    "desc": "",
+    "price": 0.7,
+    "unit": "串",
+    "tag": ""
+  },
+  {
+    "id": "jiu_cai",
+    "emoji": "🌿",
+    "name": "韭菜",
+    "category": "素菜类",
+    "desc": "",
+    "price": 0.7,
+    "unit": "串",
+    "tag": ""
+  },
+  {
+    "id": "xiang_gu",
+    "emoji": "🍄",
+    "name": "香菇",
+    "category": "素菜类",
+    "desc": "",
+    "price": 0.7,
+    "unit": "串",
+    "tag": ""
+  },
+  {
+    "id": "san_yue_gua",
+    "emoji": "🥒",
+    "name": "三月瓜",
+    "category": "素菜类",
+    "desc": "",
+    "price": 0.7,
+    "unit": "串",
+    "tag": ""
+  },
+  {
+    "id": "jin_zhen_gu",
+    "emoji": "🍄",
+    "name": "金针菇",
+    "category": "素菜类",
+    "desc": "",
+    "price": 0.7,
+    "unit": "串",
+    "tag": ""
+  },
+  {
+    "id": "yu_mi",
+    "emoji": "🌽",
+    "name": "玉米",
+    "category": "素菜类",
+    "desc": "",
+    "price": 0.7,
+    "unit": "串",
+    "tag": ""
+  },
+  {
+    "id": "si_ji_dou",
+    "emoji": "🥬",
+    "name": "四季豆",
+    "category": "素菜类",
+    "desc": "",
+    "price": 0.7,
+    "unit": "串",
+    "tag": ""
+  },
+  {
+    "id": "tu_dou_pian",
+    "emoji": "🥔",
+    "name": "土豆片",
+    "category": "素菜类",
+    "desc": "",
+    "price": 0.7,
+    "unit": "串",
+    "tag": ""
+  },
+  {
+    "id": "ou_pian",
+    "emoji": "🪷",
+    "name": "藕片",
+    "category": "素菜类",
+    "desc": "",
+    "price": 0.7,
+    "unit": "串",
+    "tag": ""
+  },
+  {
+    "id": "hai_dai",
+    "emoji": "🍃",
+    "name": "海带",
+    "category": "素菜类",
+    "desc": "",
+    "price": 0.7,
+    "unit": "串",
+    "tag": ""
+  },
+  {
+    "id": "wo_sun_pian",
+    "emoji": "🥬",
+    "name": "莴笋片",
+    "category": "素菜类",
+    "desc": "",
+    "price": 0.7,
+    "unit": "串",
+    "tag": ""
+  },
+  {
+    "id": "mu_er",
+    "emoji": "🍄",
+    "name": "木耳",
+    "category": "素菜类",
+    "desc": "",
+    "price": 0.7,
+    "unit": "串",
+    "tag": ""
+  },
+  {
+    "id": "da_qing_jiao",
+    "emoji": "🫑",
+    "name": "大青椒",
+    "category": "素菜类",
+    "desc": "",
+    "price": 2,
+    "unit": "串",
+    "tag": ""
+  },
+  {
+    "id": "guang_wei_chang",
+    "emoji": "🌭",
+    "name": "广味肠",
+    "category": "荤菜类",
+    "desc": "",
+    "price": 0.7,
+    "unit": "串",
+    "tag": ""
+  },
+  {
+    "id": "yu_dou_fu",
+    "emoji": "🍥",
+    "name": "鱼豆腐",
+    "category": "荤菜类",
+    "desc": "",
+    "price": 0.7,
+    "unit": "串",
+    "tag": ""
+  },
+  {
+    "id": "ji_dan_gan",
+    "emoji": "🥚",
+    "name": "鸡蛋干",
+    "category": "荤菜类",
+    "desc": "",
+    "price": 0.7,
+    "unit": "串",
+    "tag": ""
+  },
+  {
+    "id": "ji_jian",
+    "emoji": "🍗",
+    "name": "鸡尖",
+    "category": "荤菜类",
+    "desc": "",
+    "price": 1.4,
+    "unit": "串",
+    "tag": ""
+  },
+  {
+    "id": "jun_gan",
+    "emoji": "🍖",
+    "name": "郡肝",
+    "category": "荤菜类",
+    "desc": "",
+    "price": 0.7,
+    "unit": "串",
+    "tag": ""
+  },
+  {
+    "id": "zhang_zhong_bao",
+    "emoji": "🍗",
+    "name": "掌中宝",
+    "category": "荤菜类",
+    "desc": "",
+    "price": 0.7,
+    "unit": "串",
+    "tag": ""
+  },
+  {
+    "id": "nen_niu_rou",
+    "emoji": "🥩",
+    "name": "嫩牛肉",
+    "category": "荤菜类",
+    "desc": "",
+    "price": 0.7,
+    "unit": "串",
+    "tag": ""
+  },
+  {
+    "id": "wu_hua_rou",
+    "emoji": "🥓",
+    "name": "招牌五花肉",
+    "category": "荤菜类",
+    "desc": "招牌必点",
+    "price": 0.7,
+    "unit": "串",
+    "tag": "招牌"
+  },
+  {
+    "id": "suan_xiang_pai_gu",
+    "emoji": "🍖",
+    "name": "蒜香排骨",
+    "category": "荤菜类",
+    "desc": "",
+    "price": 0.7,
+    "unit": "串",
+    "tag": ""
+  },
+  {
+    "id": "ji_pi",
+    "emoji": "🍗",
+    "name": "鸡皮",
+    "category": "荤菜类",
+    "desc": "",
+    "price": 0.7,
+    "unit": "串",
+    "tag": ""
+  },
+  {
+    "id": "zhu_pi",
+    "emoji": "🐷",
+    "name": "猪皮",
+    "category": "荤菜类",
+    "desc": "",
+    "price": 0.7,
+    "unit": "串",
+    "tag": ""
+  },
+  {
+    "id": "fei_chang",
+    "emoji": "🍖",
+    "name": "肥肠",
+    "category": "荤菜类",
+    "desc": "",
+    "price": 1.4,
+    "unit": "串",
+    "tag": ""
+  },
+  {
+    "id": "huang_hou",
+    "emoji": "🍖",
+    "name": "黄喉",
+    "category": "荤菜类",
+    "desc": "",
+    "price": 0.7,
+    "unit": "串",
+    "tag": ""
+  },
+  {
+    "id": "wu_yu_pian",
+    "emoji": "🐟",
+    "name": "乌鱼片",
+    "category": "荤菜类",
+    "desc": "",
+    "price": 1.4,
+    "unit": "串",
+    "tag": ""
+  },
+  {
+    "id": "chou_dou_fu",
+    "emoji": "🧈",
+    "name": "臭豆腐",
+    "category": "荤菜类",
+    "desc": "闻着臭吃着香",
+    "price": 0.7,
+    "unit": "串",
+    "tag": ""
+  },
+  {
+    "id": "bo_dou_gan",
+    "emoji": "🧈",
+    "name": "薄豆干",
+    "category": "荤菜类",
+    "desc": "",
+    "price": 0.7,
+    "unit": "串",
+    "tag": ""
+  },
+  {
+    "id": "hou_dou_gan",
+    "emoji": "🧈",
+    "name": "厚豆干",
+    "category": "荤菜类",
+    "desc": "",
+    "price": 0.7,
+    "unit": "串",
+    "tag": ""
+  },
+  {
+    "id": "an_chun_dan",
+    "emoji": "🥚",
+    "name": "鹌鹑蛋",
+    "category": "荤菜类",
+    "desc": "",
+    "price": 0.7,
+    "unit": "串",
+    "tag": ""
+  },
+  {
+    "id": "you_yu",
+    "emoji": "🦑",
+    "name": "鱿鱼",
+    "category": "大串类",
+    "desc": "",
+    "price": 5,
+    "unit": "串",
+    "tag": ""
+  },
+  {
+    "id": "ma_zha",
+    "emoji": "🦗",
+    "name": "蚂蚱",
+    "category": "大串类",
+    "desc": "敢不敢试试",
+    "price": 4,
+    "unit": "串",
+    "tag": ""
+  },
+  {
+    "id": "niu_lei_tiao",
+    "emoji": "🥩",
+    "name": "特色牛肋条",
+    "category": "大串类",
+    "desc": "特色大串",
+    "price": 4,
+    "unit": "串",
+    "tag": "特色"
+  },
+  {
+    "id": "xia",
+    "emoji": "🦐",
+    "name": "虾",
+    "category": "大串类",
+    "desc": "10元/3串",
+    "price": 10,
+    "unit": "3串",
+    "tag": ""
+  },
+  {
+    "id": "xiao_huang_yu",
+    "emoji": "🐟",
+    "name": "小黄鱼",
+    "category": "大串类",
+    "desc": "10元/3串",
+    "price": 10,
+    "unit": "3串",
+    "tag": ""
+  },
+  {
+    "id": "zhong_chi",
+    "emoji": "🍗",
+    "name": "中翅",
+    "category": "大串类",
+    "desc": "",
+    "price": 8,
+    "unit": "串",
+    "tag": ""
+  },
+  {
+    "id": "ji_zhua",
+    "emoji": "🍗",
+    "name": "鸡爪",
+    "category": "大串类",
+    "desc": "",
+    "price": 4,
+    "unit": "串",
+    "tag": ""
+  },
+  {
+    "id": "rou_chang",
+    "emoji": "🌭",
+    "name": "肉肠",
+    "category": "大串类",
+    "desc": "",
+    "price": 4,
+    "unit": "串",
+    "tag": ""
+  },
+  {
+    "id": "nian_gao",
+    "emoji": "🍡",
+    "name": "年糕",
+    "category": "大串类",
+    "desc": "",
+    "price": 3,
+    "unit": "串",
+    "tag": ""
+  },
+  {
+    "id": "yu_pai",
+    "emoji": "🐟",
+    "name": "鱼排",
+    "category": "大串类",
+    "desc": "",
+    "price": 3,
+    "unit": "串",
+    "tag": ""
+  },
+  {
+    "id": "mian_jin",
+    "emoji": "🍢",
+    "name": "面筋",
+    "category": "大串类",
+    "desc": "",
+    "price": 3,
+    "unit": "串",
+    "tag": ""
+  },
+  {
+    "id": "lan_hua_gan",
+    "emoji": "🧈",
+    "name": "兰花干",
+    "category": "大串类",
+    "desc": "",
+    "price": 3,
+    "unit": "串",
+    "tag": ""
+  }
+];

@@ -1,0 +1,122 @@
+/* pages/orderSuccess/orderSuccess.wxss —— 下单成功页的样式 */
+
+.page {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 64rpx 48rpx;
+}
+
+.success-icon {
+  font-size: 120rpx;
+  line-height: 1.2;
+}
+
+.success-title {
+  margin-top: 24rpx;
+  font-size: 44rpx;
+  font-weight: 700;
+}
+
+.success-sub {
+  margin-top: 12rpx;
+  font-size: 26rpx;
+  color: #a08b78;
+}
+
+.order-card {
+  box-sizing: border-box;
+  width: 100%;
+  margin-top: 48rpx;
+  padding: 16rpx 32rpx;
+  background: #ffffff;
+  border-radius: 28rpx;
+  box-shadow: 0 8rpx 24rpx rgba(58, 36, 23, 0.06);
+}
+
+.row {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  padding: 24rpx 0;
+}
+
+.row-label {
+  flex-shrink: 0;
+  margin-right: 32rpx;
+  font-size: 26rpx;
+  color: #a08b78;
+}
+
+.row-value {
+  flex: 1;
+  font-size: 27rpx;
+  text-align: right;
+  word-break: break-all;
+}
+
+.row-price {
+  font-size: 32rpx;
+  font-weight: 700;
+  color: #e8590c;
+}
+
+.row-discount {
+  color: #e8590c;
+}
+
+.success-btn {
+  width: 100%;
+  margin-top: 48rpx;
+  height: 96rpx;
+  line-height: 96rpx;
+  text-align: center;
+  font-size: 30rpx;
+  font-weight: 600;
+  color: #ffffff;
+  background: #ff7a00;
+  border-radius: 999rpx;
+  box-shadow: 0 12rpx 24rpx rgba(255, 122, 0, 0.28);
+}
+
+.success-actions {
+  display: flex;
+  width: 100%;
+  margin-top: 48rpx;
+}
+
+.success-actions .success-btn {
+  flex: 1;
+  width: auto;
+  margin-top: 0;
+}
+
+/* 次要按钮：白底橙字 */
+.success-btn-ghost {
+  margin-right: 20rpx;
+  color: #e8590c;
+  background: #ffffff;
+  border: 2rpx solid #ffd8b0;
+  box-shadow: none;
+}
+
+.success-btn-hover {
+  transform: scale(0.98);
+  opacity: 0.9;
+}
+
+/* 找不到订单时的兜底 */
+.empty {
+  justify-content: center;
+  padding-bottom: 200rpx;
+}
+
+.empty-emoji {
+  font-size: 120rpx;
+}
+
+.empty-text {
+  margin-top: 24rpx;
+  font-size: 30rpx;
+  color: #a08b78;
+}

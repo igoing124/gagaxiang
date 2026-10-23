@@ -1,0 +1,228 @@
+/* pages/orders/orders.wxss —— 订单列表页的样式 */
+
+.page {
+  padding: 40rpx 32rpx 64rpx;
+}
+
+.page-title {
+  margin: 0 8rpx;
+  font-size: 44rpx;
+  font-weight: 700;
+}
+
+.page-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 8rpx;
+}
+
+.page-head .page-title {
+  margin: 0;
+}
+
+.clear-all {
+  flex-shrink: 0;
+  padding: 8rpx 20rpx;
+  font-size: 24rpx;
+  color: #c0392b;
+  background: #fff0e0;
+  border-radius: 999rpx;
+}
+
+.clear-all-hover {
+  opacity: 0.75;
+}
+
+.page-sub {
+  margin: 12rpx 8rpx 32rpx;
+  font-size: 24rpx;
+  color: #a08b78;
+}
+
+.order-card {
+  margin-bottom: 24rpx;
+  padding: 32rpx;
+  background: #ffffff;
+  border-radius: 28rpx;
+  box-shadow: 0 8rpx 24rpx rgba(58, 36, 23, 0.06);
+}
+
+.order-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.order-id {
+  font-family: Consolas, "SF Mono", Menlo, monospace;
+  font-size: 24rpx;
+  color: #8c7b6b;
+}
+
+.order-status {
+  padding: 4rpx 16rpx;
+  font-size: 22rpx;
+  color: #e8590c;
+  background: #fff0e0;
+  border-radius: 999rpx;
+}
+
+.order-items {
+  margin-top: 20rpx;
+  font-size: 28rpx;
+  font-weight: 600;
+  line-height: 1.6;
+}
+
+/* 配送地址 */
+.order-delivery {
+  display: inline-block;
+  max-width: 100%;
+  box-sizing: border-box;
+  margin-top: 14rpx;
+  padding: 6rpx 16rpx;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  font-size: 22rpx;
+  color: #e8590c;
+  background: #fff0e0;
+  border-radius: 8rpx;
+}
+
+.order-meta {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 12rpx;
+  font-size: 24rpx;
+  color: #a08b78;
+}
+
+.order-remark {
+  margin-top: 16rpx;
+  padding: 14rpx 20rpx;
+  font-size: 24rpx;
+  line-height: 1.5;
+  color: #6b5848;
+  background: #fff7ee;
+  border-radius: 12rpx;
+}
+
+.order-foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 20rpx;
+  padding-top: 20rpx;
+  border-top: 1rpx solid #f3e8dc;
+}
+
+/* 再来一单 + 删除 放在左侧 */
+.order-actions {
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+}
+
+/* 再来一单：次级按钮 */
+.reorder-btn {
+  margin-right: 16rpx;
+  padding: 12rpx 28rpx;
+  font-size: 24rpx;
+  color: #e8590c;
+  background: #fff7ee;
+  border: 1rpx solid #ffd8b0;
+  border-radius: 999rpx;
+}
+
+.reorder-btn-hover {
+  transform: scale(0.97);
+  opacity: 0.8;
+}
+
+/* 删除：危险操作用偏红的颜色区分 */
+.delete-btn {
+  padding: 12rpx 24rpx;
+  font-size: 24rpx;
+  color: #c0392b;
+  background: #fff5f2;
+  border: 1rpx solid #ffd0c0;
+  border-radius: 999rpx;
+}
+
+.delete-btn-hover {
+  opacity: 0.75;
+}
+
+.order-total-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  flex-shrink: 0;
+  margin-left: 16rpx;
+}
+
+.order-total-line {
+  display: flex;
+  align-items: baseline;
+}
+
+.order-discount {
+  margin-top: 4rpx;
+  font-size: 20rpx;
+  color: #a08b78;
+}
+
+.order-total-label {
+  margin-right: 8rpx;
+  font-size: 24rpx;
+  color: #a08b78;
+}
+
+.order-total {
+  font-size: 34rpx;
+  font-weight: 700;
+  color: #e8590c;
+}
+
+/* 列表底部的「继续点单」 */
+.orders-back {
+  margin: 40rpx auto 0;
+  padding: 18rpx 56rpx;
+  width: 240rpx;
+  text-align: center;
+  font-size: 28rpx;
+  color: #ffffff;
+  background: #ff7a00;
+  border-radius: 999rpx;
+  box-shadow: 0 10rpx 20rpx rgba(255, 122, 0, 0.24);
+}
+
+/* 空状态 */
+.empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding-bottom: 200rpx;
+}
+
+.empty-emoji {
+  font-size: 120rpx;
+}
+
+.empty-text {
+  margin-top: 24rpx;
+  font-size: 28rpx;
+  color: #a08b78;
+}
+
+.empty-btn {
+  margin-top: 40rpx;
+  padding: 18rpx 56rpx;
+  font-size: 28rpx;
+  color: #ffffff;
+  background: #ff7a00;
+  border-radius: 999rpx;
+}

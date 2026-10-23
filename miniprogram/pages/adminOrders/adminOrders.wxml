@@ -1,0 +1,137 @@
+<!-- pages/adminOrders/adminOrders.wxml —— 商家订单管理 -->
+<view class="page">
+  <view class="page-head">
+    <view class="head-main">
+      <view class="page-title">订单管理</view>
+      <view class="page-sub" wx:if="{{isAdmin}}">待接单 {{pendingCount}} 单</view>
+    </view>
+    <view class="head-actions" wx:if="{{isAdmin}}">
+      <view class="head-btn" bindtap="onRefresh">刷新</view>
+      <view class="head-btn" bindtap="onOpenDishes">菜品</view>
+      <view class="head-btn head-btn-primary" bindtap="onOpenCoupons">优惠券</view>
+    </view>
+  </view>
+
+  <!-- 自动刷新状态 + 试听提示音 -->
+  <view class="auto-refresh" wx:if="{{isAdmin}}">
+    <text>每 {{pollSeconds}} 秒自动检查新订单</text>
+    <text class="alert-test" bindtap="onTestAlert">测试提醒</text>
+  </view>
+
+  <!-- 新订单提示条 -->
+  <view class="new-order-tip" wx:if="{{newOrderTip}}" bindtap="onNewOrderTipTap">
+    <text class="new-order-tip-text">🔔 {{newOrderTipText}}</text>
+    <text class="new-order-tip-action">去接单 ›</text>
+  </view>
+
+  <!-- 首次加载 -->
+  <view class="state-card" wx:if="{{loading && allOrders.length === 0}}">加载中...</view>
+
+  <!-- 云开发未连接 -->
+  <view class="state-card" wx:elif="{{!cloudEnabled}}">
+    <view class="state-title">云开发还没有连接</view>
+    <view class="state-text">请先配置云环境、部署 api 云函数，再进入本页。</view>
+  </view>
+
+  <!-- 没有商家权限 -->
+  <view class="state-card" wx:elif="{{!isAdmin}}">
+    <view class="state-title">没有商家权限</view>
+    <view class="state-text">当前用户编号：</view>
+    <text class="openid" user-select="true">{{openid}}</text>
+    <view class="copy-btn" wx:if="{{openid}}" bindtap="onCopyOpenid">复制 openid</view>
+    <view class="state-text">请到云开发控制台 → 数据库 → config 集合 → admin 文档，把上面的编号加到 openids 数组里，然后重新进入本页。</view>
+  </view>
+
+  <block wx:else>
+    <!-- 状态筛选 -->
+    <view class="tabs">
+      <view
+        class="tab {{activeTab === item.key ? 'tab-active' : ''}}"
+        wx:for="{{tabs}}"
+        wx:key="key"
+        data-key="{{item.key}}"
+        bindtap="onTab"
+      >
+        <text>{{item.label}}</text>
+        <text class="tab-badge" wx:if="{{item.count > 0}}">{{item.count}}</text>
+      </view>
+    </view>
+
+    <!-- 订单列表 -->
+    <view class="order-card" wx:for="{{orders}}" wx:key="_id">
+      <view class="order-top">
+        <text class="order-id">{{item.id}}</text>
+        <text class="status-tag status-{{item.status}}">{{item.statusText}}</text>
+      </view>
+
+      <view class="order-time">{{item.timeText}} · 共 {{item.cartCount}} 份</view>
+
+      <view class="customer-row">
+        <text class="customer-name">{{item.receiverName}}</text>
+        <text class="customer-phone">{{item.receiverPhone}}</text>
+      </view>
+      <view class="order-address">📍 {{item.address}}</view>
+
+      <view class="order-items">{{item.itemsText}}</view>
+      <view class="order-remark" wx:if="{{item.remark}}">备注：{{item.remark}}</view>
+
+      <view class="order-money">
+        <text class="money-main">订单金额 ¥{{item.payablePrice}}</text>
+        <text class="money-sub" wx:if="{{item.hasDiscount}}">已优惠 ¥{{item.discount}}</text>
+      </view>
+      <view class="pay-mode">收款方式：线下，接单后与顾客确认</view>
+
+      <view class="order-actions">
+        <view
+          class="action action-ghost"
+          data-phone="{{item.receiverPhone}}"
+          bindtap="onCall"
+        >打电话</view>
+
+        <block wx:if="{{item.status === 'pending'}}">
+          <view
+            class="action action-warn"
+            data-id="{{item._id}}"
+            bindtap="onCancel"
+          >取消</view>
+          <view
+            class="action action-primary {{updatingId === item._id ? 'action-disabled' : ''}}"
+            data-id="{{item._id}}"
+            bindtap="onAccept"
+          >{{updatingId === item._id ? '处理中...' : '接单'}}</view>
+        </block>
+
+        <block wx:elif="{{item.status === 'making'}}">
+          <view
+            class="action action-warn"
+            data-id="{{item._id}}"
+            bindtap="onCancel"
+          >取消</view>
+          <view
+            class="action action-primary {{updatingId === item._id ? 'action-disabled' : ''}}"
+            data-id="{{item._id}}"
+            bindtap="onDeliver"
+          >{{updatingId === item._id ? '处理中...' : '开始配送'}}</view>
+        </block>
+
+        <block wx:elif="{{item.status === 'delivering'}}">
+          <view
+            class="action action-warn"
+            data-id="{{item._id}}"
+            bindtap="onCancel"
+          >取消</view>
+          <view
+            class="action action-primary {{updatingId === item._id ? 'action-disabled' : ''}}"
+            data-id="{{item._id}}"
+            bindtap="onComplete"
+          >{{updatingId === item._id ? '处理中...' : '完成订单'}}</view>
+        </block>
+      </view>
+    </view>
+
+    <view class="empty" wx:if="{{orders.length === 0 && !loading}}">
+      <view class="empty-emoji">{{activeTab === 'pending' ? '✅' : '🧾'}}</view>
+      <view class="empty-text">{{activeTab === 'pending' ? '没有待接单的订单' : '暂无订单'}}</view>
+    </view>
+  </block>
+</view>

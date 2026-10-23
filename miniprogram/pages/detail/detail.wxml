@@ -1,0 +1,47 @@
+<!-- pages/detail/detail.wxml —— 商品详情页的结构 -->
+<view class="page" wx:if="{{item}}">
+  <view class="detail-hero">
+    <view class="detail-emoji">{{item.emoji}}</view>
+    <!-- 售罄时盖一层半透明遮罩 -->
+    <view class="detail-hero-mask" wx:if="{{item.soldOut}}">已售罄</view>
+  </view>
+
+  <view class="detail-card">
+    <view class="detail-name-row">
+      <text class="detail-name">{{item.name}}</text>
+      <!-- wx:if / wx:elif：售罄优先显示「已售罄」，否则显示普通标签 -->
+      <text class="detail-tag detail-tag-soldout" wx:if="{{item.soldOut}}">已售罄</text>
+      <text class="detail-tag" wx:elif="{{item.tag}}">{{item.tag}}</text>
+    </view>
+
+    <view class="detail-desc" wx:if="{{item.desc}}">{{item.desc}}</view>
+    <view class="detail-price">¥{{item.price}}<text class="detail-unit">/{{item.unit}}</text></view>
+
+    <view class="detail-count" wx:if="{{count > 0}}">
+      购物车里已有 {{count}} 份
+    </view>
+
+    <!-- 售罄时显示置灰的按钮，不能点击 -->
+    <view class="detail-add detail-add-disabled" wx:if="{{item.soldOut}}">已售罄</view>
+    <view
+      class="detail-add"
+      wx:else
+      bindtap="onAdd"
+      hover-class="detail-add-hover"
+    >加入购物车</view>
+
+    <view class="detail-back" bindtap="goBack">← 返回菜单</view>
+  </view>
+</view>
+
+<!-- 商品还在加载 -->
+<view class="page empty" wx:elif="{{loading}}">
+  <view class="empty-emoji">⏳</view>
+  <view class="empty-text">商品加载中...</view>
+</view>
+
+<!-- 如果商品 id 不对（或已下架），item 就是 null，显示这个兜底页面 -->
+<view class="page empty" wx:else>
+  <view class="empty-emoji">🍽️</view>
+  <view class="empty-text">没有找到这个商品</view>
+</view>

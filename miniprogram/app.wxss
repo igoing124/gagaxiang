@@ -1,0 +1,14 @@
+/* app.wxss —— 全局样式，所有页面都会生效 */
+
+page {
+  background: #fff8f0;
+  color: #3a2417;
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei",
+    sans-serif;
+}
+
+/* 每个页面共用的外层容器 */
+.page {
+  box-sizing: border-box;
+  min-height: 100vh;
+}

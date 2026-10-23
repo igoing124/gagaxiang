@@ -1,0 +1,14 @@
+{
+  "name": "gagaxiang-h5-order",
+  "version": "1.0.0",
+  "private": true,
+  "description": "嘎嘎香 乐山油炸串串 H5 点单系统",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "test": "node test/smoke.js"
+  },
+  "dependencies": {
+    "express": "^4.21.2"
+  }
+}

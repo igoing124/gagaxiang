@@ -1,0 +1,223 @@
+<!-- pages/profile/profile.wxml ——「我的」页：登录、历史订单、下单总额 -->
+<view class="page" wx:if="{{loaded}}">
+
+  <!-- ================= 已登录 ================= -->
+  <block wx:if="{{loggedIn}}">
+    <view class="user-card">
+      <view
+        class="avatar-wrap"
+        bindtap="onChangeAvatar"
+        hover-class="avatar-wrap-hover"
+      >
+        <image
+          wx:if="{{user.avatarUrl}}"
+          class="avatar"
+          src="{{user.avatarUrl}}"
+          mode="aspectFill"
+          binderror="onAvatarError"
+        />
+        <view wx:else class="avatar avatar-default">🍢</view>
+        <view class="avatar-edit-badge">{{changingAvatar ? '更新中' : '换头像'}}</view>
+      </view>
+
+      <view class="user-info">
+        <view class="user-name">{{user.nickName}}</view>
+        <view class="user-sub">微信已登录 · 昵称不可修改</view>
+      </view>
+
+      <view
+        class="logout-btn"
+        bindtap="onLogout"
+        hover-class="logout-btn-hover"
+      >退出</view>
+    </view>
+
+    <!-- 订单统计 -->
+    <view class="stats-card">
+      <view class="stat">
+        <view class="stat-num">{{orderCount}}</view>
+        <view class="stat-label">历史订单</view>
+      </view>
+      <view class="stat-divider"></view>
+      <view class="stat">
+        <view class="stat-num">¥{{totalSpent}}</view>
+        <view class="stat-label">下单总额</view>
+      </view>
+    </view>
+
+    <!-- 我的优惠券 -->
+    <view class="section-head">
+      <view class="section-title">我的优惠券</view>
+    </view>
+
+    <view class="coupon-card" wx:if="{{coupons.length > 0}}">
+      <view class="coupon-row" wx:for="{{coupons}}" wx:key="id">
+        <view class="coupon-info">
+          <view class="coupon-name">🎟️ {{item.name}}</view>
+          <view class="coupon-desc">满 ¥{{item.threshold}} 减 ¥{{item.discount}}</view>
+        </view>
+        <view class="coupon-tag" wx:if="{{item.blockedByFirstOrder}}">仅限首单</view>
+        <view class="coupon-tag coupon-tag-ok" wx:else>待使用</view>
+      </view>
+    </view>
+    <view class="coupon-empty" wx:else>暂无优惠券</view>
+
+    <!-- 最近订单 -->
+    <view class="section-head">
+      <view class="section-title">最近订单</view>
+      <view
+        class="section-more"
+        bindtap="onManageOrders"
+        hover-class="section-more-hover"
+      >管理订单 ›</view>
+    </view>
+
+    <view class="order-list" wx:if="{{recentOrders.length > 0}}">
+      <view class="order-card" wx:for="{{recentOrders}}" wx:key="id">
+        <view class="order-head">
+          <text class="order-id">{{item.id}}</text>
+          <text class="order-status">{{item.statusText}}</text>
+        </view>
+
+        <view class="order-items">{{item.itemsText}}</view>
+
+        <view class="order-delivery" wx:if="{{item.deliveryText}}">{{item.deliveryText}}</view>
+
+        <view class="order-meta">
+          <text>{{item.timeText}}</text>
+          <text class="order-total">¥{{item.payablePrice}}</text>
+        </view>
+        <view class="order-discount" wx:if="{{item.hasDiscount}}">已优惠 ¥{{item.discount}}</view>
+      </view>
+    </view>
+
+    <view class="empty" wx:else>
+      <view class="empty-emoji">🧾</view>
+      <view class="empty-text">还没有订单，去点一份吧</view>
+      <view
+        class="empty-btn"
+        bindtap="onGoOrder"
+        hover-class="empty-btn-hover"
+      >去点单</view>
+    </view>
+
+    <view class="page-note">演示版：登录状态、头像和订单只保存在本机，换设备不会同步</view>
+  </block>
+
+  <!-- ================= 设置头像和微信昵称 ================= -->
+  <block wx:elif="{{settingUp}}">
+    <view class="setup-card">
+      <view class="setup-title">设置头像和微信昵称</view>
+      <view class="setup-sub">完成后就能看到历史订单和下单总额</view>
+
+      <view
+        class="setup-avatar"
+        bindtap="onChooseAvatar"
+        hover-class="setup-avatar-hover"
+      >
+        <image
+          wx:if="{{draftAvatarPath}}"
+          class="avatar avatar-large"
+          src="{{draftAvatarPath}}"
+          mode="aspectFill"
+          binderror="onDraftAvatarError"
+        />
+        <view wx:else class="avatar avatar-large avatar-default">🍢</view>
+        <view class="avatar-badge">{{draftAvatarPath ? '换头像' : '选择头像'}}</view>
+      </view>
+
+      <view class="setup-avatar-tip">昵称使用微信名，登录后不可修改</view>
+
+      <view class="nickname-label">微信昵称</view>
+      <input
+        class="nickname-input"
+        type="nickname"
+        value="{{draftNickName}}"
+        placeholder="点击选择微信昵称"
+        placeholder-class="nickname-placeholder"
+        bindinput="onNicknameInput"
+        bindblur="onNicknameInput"
+        bindconfirm="onCompleteSetup"
+      />
+
+      <view
+        class="setup-reset"
+        bindtap="onResetAvatar"
+        wx:if="{{draftAvatarPath}}"
+      >使用默认头像</view>
+
+      <view class="setup-actions">
+        <view
+          class="setup-cancel"
+          bindtap="onCancelSetup"
+          hover-class="setup-btn-hover"
+        >取消</view>
+        <view
+          class="setup-confirm {{completing ? 'setup-confirm-disabled' : ''}}"
+          bindtap="onCompleteSetup"
+          hover-class="setup-btn-hover"
+        >{{completing ? '登录中...' : '完成登录'}}</view>
+      </view>
+    </view>
+  </block>
+
+  <!-- ================= 未登录 ================= -->
+  <block wx:else>
+    <view class="login-card">
+      <view class="login-emoji">🍢</view>
+      <view class="login-title">欢迎光临嘎嘎香</view>
+      <view class="login-sub">微信登录后查看历史订单和下单总额</view>
+
+      <view
+        class="login-btn {{loggingIn ? 'login-btn-disabled' : ''}}"
+        bindtap="onLogin"
+        hover-class="login-btn-hover"
+      >{{loggingIn ? '登录中...' : '微信一键登录'}}</view>
+
+      <view class="login-note">演示版：登录状态和订单只保存在本机，不会上传个人信息</view>
+    </view>
+  </block>
+
+  <!-- 门店信息（登录前后都能看到） -->
+  <view class="store-card" wx:if="{{store}}">
+    <view class="store-title">门店信息</view>
+
+    <view class="store-row">
+      <text class="store-label">营业时间</text>
+      <text class="store-value">{{store.hours}}</text>
+    </view>
+
+    <view class="store-row">
+      <text class="store-label">联系电话</text>
+      <text class="store-value">{{store.phoneText}}</text>
+    </view>
+
+    <view class="store-row">
+      <text class="store-label">配送费</text>
+      <text class="store-value">¥{{store.deliveryFee}}（满 ¥{{store.freeDeliveryThreshold}} 免）</text>
+    </view>
+
+    <view class="store-actions">
+      <view
+        class="store-call"
+        bindtap="onCall"
+        hover-class="store-btn-hover"
+      >一键拨号</view>
+
+      <button
+        class="share-btn"
+        open-type="share"
+        hover-class="store-btn-hover"
+      >分享给好友</button>
+    </view>
+  </view>
+
+  <!-- 商家入口：只有管理员可见；还没配置管理员时先显示，方便首次配置 -->
+  <view class="admin-entry" wx:if="{{showAdminEntry}}" bindtap="onAdminEntry">商家入口</view>
+
+</view>
+
+<view class="page empty" wx:else>
+  <view class="empty-emoji">⏳</view>
+  <view class="empty-text">加载中...</view>
+</view>

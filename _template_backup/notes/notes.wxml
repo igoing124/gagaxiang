@@ -1,0 +1,28 @@
+<!-- pages/notes/notes.wxml —— 学习笔记页的结构 -->
+<view class="page">
+  <view class="notes-hero">
+    <view class="notes-title">这个 Demo 是怎么写出来的</view>
+    <view class="notes-sub">边玩边看，改代码是最好的学习方式</view>
+  </view>
+
+  <view class="section-list">
+    <view class="section-card" wx:for="{{sections}}" wx:key="title">
+      <view class="section-index">{{index + 1}}</view>
+      <view class="section-body">
+        <view class="section-title">{{item.title}}</view>
+        <view class="section-text">{{item.body}}</view>
+        <text class="section-code" user-select="true">{{item.code}}</text>
+      </view>
+    </view>
+  </view>
+
+  <view class="exercise-card">
+    <view class="exercise-title">✏️ 动手练一练</view>
+    <view class="exercise-item" wx:for="{{exercises}}" wx:key="*this">
+      <text class="exercise-dot">·</text>
+      <text class="exercise-text">{{item}}</text>
+    </view>
+  </view>
+
+  <view class="footer">学完这些，你就能看懂这个项目 80% 的代码了 💪</view>
+</view>

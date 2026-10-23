@@ -1,0 +1,174 @@
+<!-- pages/checkout/checkout.wxml —— 确认订单（配送）页 -->
+<view class="page" wx:if="{{list.length > 0}}">
+  <view class="page-title">确认订单</view>
+
+  <!-- 配送信息 -->
+  <view class="card">
+    <view class="card-title">配送信息</view>
+
+    <view class="delivery-field">
+      <text class="delivery-label">收货人</text>
+      <input
+        class="delivery-input"
+        value="{{receiverName}}"
+        placeholder="请输入姓名"
+        placeholder-class="delivery-placeholder"
+        maxlength="20"
+        bindinput="onReceiverNameInput"
+      />
+    </view>
+
+    <view class="delivery-field">
+      <text class="delivery-label">手机号</text>
+      <input
+        class="delivery-input"
+        type="number"
+        value="{{receiverPhone}}"
+        placeholder="请输入 11 位手机号"
+        placeholder-class="delivery-placeholder"
+        maxlength="11"
+        bindinput="onReceiverPhoneInput"
+      />
+    </view>
+
+    <view class="delivery-address-field">
+      <text class="delivery-label">收货地址</text>
+      <textarea
+        class="delivery-address"
+        value="{{address}}"
+        placeholder="街道、小区、门牌号"
+        placeholder-class="delivery-placeholder"
+        maxlength="100"
+        bindinput="onAddressInput"
+      />
+    </view>
+
+    <view class="delivery-hint delivery-hint-free" wx:if="{{deliveryFee === 0}}">已免配送费</view>
+    <view class="delivery-hint" wx:else>还差 ¥{{freeDeliveryGap}} 免配送费</view>
+  </view>
+
+  <!-- 商品清单 -->
+  <view class="card">
+    <view class="card-title">商品清单</view>
+
+    <!-- block 本身不会渲染成节点，只是用来包住循环产生的多个节点 -->
+    <block wx:for="{{list}}" wx:key="id">
+      <view class="item">
+        <view class="item-main">
+          <view class="item-emoji">{{item.emoji}}</view>
+          <view class="item-info">
+            <view class="item-name">{{item.name}}</view>
+            <view class="item-price">¥{{item.price}} / {{item.unit}}</view>
+          </view>
+          <view class="item-subtotal">¥{{item.subtotal}}</view>
+        </view>
+
+        <!-- Vant 的步进器：数量加减 -->
+        <view class="item-actions">
+          <van-stepper
+            value="{{item.count}}"
+            min="{{0}}"
+            data-id="{{item.id}}"
+            bind:change="onStepperChange"
+            style="--stepper-background-color: #fff1e3; --stepper-button-icon-color: #e8590c; --stepper-active-color: #ffe0c2; --stepper-border-radius: 8px;"
+          />
+        </view>
+      </view>
+
+      <!-- 最后一项后面不加分割线 -->
+      <view class="item-divider" wx:if="{{index !== list.length - 1}}"></view>
+    </block>
+  </view>
+
+  <!-- 优惠券 -->
+  <view class="card">
+    <view class="card-title">优惠券</view>
+
+    <view class="coupon-empty" wx:if="{{coupons.length === 0}}">暂无可用优惠券</view>
+
+    <view class="coupon-item" wx:for="{{coupons}}" wx:key="id">
+      <view class="coupon-item-main">
+        <view class="coupon-name">🎟️ {{item.name}}</view>
+        <view class="coupon-desc">满 ¥{{item.threshold}} 减 ¥{{item.discount}}</view>
+        <view class="coupon-desc coupon-desc-warn" wx:if="{{item.blockedByFirstOrder}}">仅限首单使用</view>
+        <view class="coupon-desc" wx:elif="{{!item.minSpendOk}}">还差 ¥{{item.gap}} 可用</view>
+      </view>
+
+      <view
+        class="coupon-btn {{item.eligible ? '' : 'coupon-btn-disabled'}} {{selectedCouponId === item.id ? 'coupon-btn-used' : ''}}"
+        data-id="{{item.id}}"
+        bindtap="onSelectCoupon"
+        hover-class="coupon-btn-hover"
+      >{{selectedCouponId === item.id ? '取消' : '使用'}}</view>
+    </view>
+
+    <view class="coupon-saved" wx:if="{{couponUsed}}">已优惠 ¥{{discount}}</view>
+  </view>
+
+  <!-- 费用明细 -->
+  <view class="card">
+    <view class="card-title">费用明细</view>
+
+    <view class="fee-row">
+      <text class="fee-label">商品金额</text>
+      <text class="fee-value">¥{{totalPrice}}</text>
+    </view>
+
+    <view class="fee-row">
+      <text class="fee-label">配送费</text>
+      <text class="fee-value">{{deliveryFee > 0 ? '¥' + deliveryFee : '免配送费'}}</text>
+    </view>
+
+    <view class="fee-row" wx:if="{{discount > 0}}">
+      <text class="fee-label">优惠券</text>
+      <text class="fee-value fee-discount">-¥{{discount}}</text>
+    </view>
+
+    <view class="fee-row fee-total">
+      <text class="fee-label">订单金额</text>
+      <text class="fee-value fee-price">¥{{payablePrice}}</text>
+    </view>
+
+    <view class="payment-note">付款方式：线下支付，商家接单后会电话联系你确认</view>
+  </view>
+
+  <!-- 备注 -->
+  <view class="card">
+    <view class="card-title">备注</view>
+    <textarea
+      class="remark"
+      value="{{remark}}"
+      placeholder="口味、忌口、配送要求等（选填）"
+      placeholder-class="remark-placeholder"
+      maxlength="50"
+      bindinput="onRemarkInput"
+    />
+    <view class="remark-count">{{remark.length}}/50</view>
+  </view>
+
+  <!-- Vant 的底部提交栏：price 的单位是「分」 -->
+  <van-submit-bar
+    price="{{payablePriceFen}}"
+    decimal-length="{{2}}"
+    button-text="提交订单"
+    tip="{{tipText}}"
+    button-class="submit-bar-button"
+    bind:submit="onSubmit"
+  />
+
+  <!-- 二次确认弹窗，Dialog.confirm 会找到这个节点 -->
+  <van-dialog id="van-dialog" />
+</view>
+
+<!-- 菜单还在加载 -->
+<view class="page empty" wx:elif="{{menuLoading}}">
+  <view class="empty-emoji">⏳</view>
+  <view class="empty-text">菜单加载中...</view>
+</view>
+
+<!-- 购物车空了（比如把数量全减到 0） -->
+<view class="page empty" wx:else>
+  <view class="empty-emoji">🛒</view>
+  <view class="empty-text">购物车是空的</view>
+  <view class="empty-btn" bindtap="onBack">去点单</view>
+</view>

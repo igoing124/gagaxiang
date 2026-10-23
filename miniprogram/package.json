@@ -1,0 +1,9 @@
+{
+  "name": "youzha-miniprogram",
+  "version": "1.0.0",
+  "private": true,
+  "description": "嘎嘎香 乐山油炸串串 · 微信小程序",
+  "dependencies": {
+    "@vant/weapp": "^1.11.7"
+  }
+}

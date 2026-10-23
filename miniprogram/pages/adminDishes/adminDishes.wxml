@@ -1,0 +1,166 @@
+<!-- pages/adminDishes/adminDishes.wxml —— 商家菜品管理 -->
+<view class="page">
+  <view class="page-head">
+    <view class="head-main">
+      <view class="page-title">菜品管理</view>
+      <view class="page-sub" wx:if="{{isAdmin}}">共 {{dishes.length}} 道菜</view>
+    </view>
+    <view class="head-actions" wx:if="{{isAdmin}}">
+      <view class="head-btn" bindtap="onOpenOrders">订单</view>
+    </view>
+  </view>
+
+  <!-- 首次加载 -->
+  <view class="state-card" wx:if="{{loading && dishes.length === 0}}">加载中...</view>
+
+  <!-- 云开发未连接 -->
+  <view class="state-card" wx:elif="{{!cloudEnabled}}">
+    <view class="state-title">云开发还没有连接</view>
+    <view class="state-text">请先配置云环境、部署 api 云函数，再进入本页。</view>
+  </view>
+
+  <!-- 没有商家权限 -->
+  <view class="state-card" wx:elif="{{!isAdmin}}">
+    <view class="state-title">没有商家权限</view>
+    <view class="state-text">当前用户编号：</view>
+    <text class="openid" user-select="true">{{openid}}</text>
+    <view class="copy-btn" wx:if="{{openid}}" bindtap="onCopyOpenid">复制 openid</view>
+    <view class="state-text">请到云开发控制台 → 数据库 → config 集合 → admin 文档，把上面的编号加到 openids 数组里，然后重新进入本页。</view>
+  </view>
+
+  <block wx:else>
+    <view class="toolbar">
+      <view
+        class="toolbar-ghost"
+        wx:if="{{dishes.length > 0}}"
+        bindtap="onSeed"
+      >{{seeding ? '导入中...' : '导入本地菜单'}}</view>
+      <view class="toolbar-btn" bindtap="onNewDish">+ 新增菜品</view>
+    </view>
+
+    <!-- 云端还没有菜单：先导入本地 goods.js -->
+    <view class="seed-card" wx:if="{{dishes.length === 0}}">
+      <view class="seed-title">云端还没有菜单</view>
+      <view class="seed-text">把本地 goods.js 里的 {{localDishCount}} 道菜导入云数据库，之后顾客会优先读取云端菜单，你再改价格或标售罄就不需要改代码了。</view>
+      <view
+        class="seed-btn {{seeding ? 'btn-disabled' : ''}}"
+        bindtap="onSeed"
+      >{{seeding ? '导入中...' : '导入当前菜单'}}</view>
+    </view>
+
+    <!-- 新增 / 编辑表单 -->
+    <view class="form-card" wx:if="{{formVisible}}">
+      <view class="card-title">{{editing ? '编辑菜品' : '新增菜品'}}</view>
+
+      <view class="form-row">
+        <text class="form-label">名称</text>
+        <input class="form-input" value="{{form.name}}" placeholder="例如 牛肉串" maxlength="30" bindinput="onNameInput" />
+      </view>
+
+      <view class="form-row">
+        <text class="form-label">分类</text>
+        <input class="form-input" value="{{form.category}}" placeholder="例如 荤菜类" maxlength="20" bindinput="onCategoryInput" />
+      </view>
+
+      <view class="form-chips" wx:if="{{dishCategories.length > 0}}">
+        <view
+          class="form-chip {{form.category === item ? 'form-chip-active' : ''}}"
+          wx:for="{{dishCategories}}"
+          wx:key="*this"
+          data-category="{{item}}"
+          bindtap="onFormCategory"
+        >{{item}}</view>
+      </view>
+
+      <view class="form-row">
+        <text class="form-label">价格（元）</text>
+        <input class="form-input" type="digit" value="{{form.price}}" placeholder="例如 0.7" bindinput="onPriceInput" />
+      </view>
+
+      <view class="form-row">
+        <text class="form-label">单位</text>
+        <input class="form-input" value="{{form.unit}}" placeholder="串 / 份 / 3串" maxlength="10" bindinput="onUnitInput" />
+      </view>
+
+      <view class="form-row">
+        <text class="form-label">图标</text>
+        <input class="form-input" value="{{form.emoji}}" placeholder="🍢" maxlength="4" bindinput="onEmojiInput" />
+      </view>
+
+      <view class="form-row">
+        <text class="form-label">标签</text>
+        <input class="form-input" value="{{form.tag}}" placeholder="招牌 / 新品（选填）" maxlength="10" bindinput="onTagInput" />
+      </view>
+
+      <view class="form-row">
+        <text class="form-label">描述</text>
+        <input class="form-input" value="{{form.desc}}" placeholder="选填" maxlength="80" bindinput="onDescInput" />
+      </view>
+
+      <view class="form-row">
+        <text class="form-label">售罄</text>
+        <switch checked="{{form.soldOut}}" color="#ff7a00" bindchange="onSoldOutChange" />
+      </view>
+
+      <view class="form-row">
+        <text class="form-label">上架</text>
+        <switch checked="{{form.enabled}}" color="#ff7a00" bindchange="onEnabledChange" />
+      </view>
+
+      <view class="form-actions">
+        <view class="btn-ghost" bindtap="onCancelForm">取消</view>
+        <view class="btn-primary {{saving ? 'btn-disabled' : ''}}" bindtap="onSaveDish">{{saving ? '保存中...' : '保存'}}</view>
+      </view>
+    </view>
+
+    <!-- 分类筛选 -->
+    <scroll-view class="category-bar" scroll-x wx:if="{{dishes.length > 0}}">
+      <view
+        class="category-chip {{filterCategory === item ? 'category-chip-active' : ''}}"
+        wx:for="{{filterCategories}}"
+        wx:key="*this"
+        data-category="{{item}}"
+        bindtap="onFilterCategory"
+      >{{item}}</view>
+    </scroll-view>
+
+    <!-- 菜品列表 -->
+    <view class="dish-row" wx:for="{{visibleDishes}}" wx:key="id">
+      <view class="dish-emoji">{{item.emoji}}</view>
+
+      <view class="dish-main">
+        <view class="dish-name-row">
+          <text class="dish-name">{{item.name}}</text>
+          <text class="dish-tag" wx:if="{{item.tag}}">{{item.tag}}</text>
+        </view>
+        <view class="dish-meta">{{item.category}} · ¥{{item.price}}/{{item.unit}}</view>
+        <view class="dish-state">
+          <text class="state-pill state-on" wx:if="{{item.enabled && !item.soldOut}}">在售</text>
+          <text class="state-pill state-soldout" wx:elif="{{item.enabled && item.soldOut}}">已售罄</text>
+          <text class="state-pill state-off" wx:else>已下架</text>
+        </view>
+      </view>
+
+      <view class="dish-actions">
+        <view class="mini-btn" data-id="{{item.id}}" bindtap="onEditDish">编辑</view>
+        <view
+          class="mini-btn"
+          data-id="{{item.id}}"
+          data-field="soldOut"
+          bindtap="onToggleDish"
+        >{{item.soldOut ? '恢复' : '售罄'}}</view>
+        <view
+          class="mini-btn mini-btn-warn"
+          data-id="{{item.id}}"
+          data-field="enabled"
+          bindtap="onToggleDish"
+        >{{item.enabled ? '下架' : '上架'}}</view>
+      </view>
+    </view>
+
+    <view class="empty" wx:if="{{visibleDishes.length === 0 && dishes.length > 0}}">
+      <view class="empty-emoji">🍽️</view>
+      <view class="empty-text">这个分类还没有菜品</view>
+    </view>
+  </block>
+</view>

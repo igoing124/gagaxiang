@@ -1,0 +1,16 @@
+{
+  "name": "gagaxiang-order-worker",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "嘎嘎香 H5 点单系统的 Cloudflare Workers 版本",
+  "scripts": {
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy",
+    "test": "node test/shop.test.mjs",
+    "test:online": "node test/online.mjs"
+  },
+  "devDependencies": {
+    "wrangler": "^4.152.0"
+  }
+}

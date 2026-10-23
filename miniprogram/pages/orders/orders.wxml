@@ -1,0 +1,72 @@
+<!-- pages/orders/orders.wxml —— 订单列表页 -->
+<view class="page" wx:if="{{orders.length > 0}}">
+  <view class="page-head">
+    <view class="page-title">我的订单</view>
+    <view
+      class="clear-all"
+      bindtap="onClearAll"
+      hover-class="clear-all-hover"
+    >清空全部</view>
+  </view>
+  <view class="page-sub">共 {{orders.length}} 笔订单</view>
+
+  <view class="order-card" wx:for="{{orders}}" wx:key="id">
+    <view class="order-head">
+      <text class="order-id">{{item.id}}</text>
+      <text class="order-status">{{item.statusText}}</text>
+    </view>
+
+    <view class="order-items">{{item.itemsText}}</view>
+
+    <view class="order-delivery" wx:if="{{item.deliveryText}}">{{item.deliveryText}}</view>
+
+    <view class="order-meta">
+      <text>{{item.timeText}}</text>
+      <text>共 {{item.cartCount}} 份</text>
+    </view>
+
+    <view class="order-remark" wx:if="{{item.remark}}">
+      备注：{{item.remark}}
+    </view>
+
+    <view class="order-foot">
+      <view class="order-actions">
+        <view
+          class="reorder-btn"
+          data-index="{{index}}"
+          catchtap="onReorder"
+          hover-class="reorder-btn-hover"
+        >再来一单</view>
+
+        <view
+          class="delete-btn"
+          data-id="{{item.id}}"
+          catchtap="onDelete"
+          hover-class="delete-btn-hover"
+        >删除</view>
+      </view>
+
+      <view class="order-total-wrap">
+        <view class="order-total-line">
+          <text class="order-total-label">金额</text>
+          <text class="order-total">¥{{item.payablePrice}}</text>
+        </view>
+        <view class="order-discount" wx:if="{{item.hasDiscount}}">已优惠 ¥{{item.discount}}</view>
+      </view>
+    </view>
+  </view>
+
+  <view class="orders-back" bindtap="onBack">继续点单</view>
+</view>
+
+<view class="page empty" wx:elif="{{loading}}">
+  <view class="empty-emoji">⏳</view>
+  <view class="empty-text">订单加载中...</view>
+</view>
+
+<!-- 一笔订单都没有 -->
+<view class="page empty" wx:else>
+  <view class="empty-emoji">🧾</view>
+  <view class="empty-text">还没有订单，去点一份吧</view>
+  <view class="empty-btn" bindtap="onBack">去点单</view>
+</view>

@@ -1,0 +1,70 @@
+// data/goods.js
+// 菜单数据。学习阶段先用本地写死的数据，不需要联网。
+// 以后做真正的点单小程序时，这里可以改成从云开发数据库读取。
+// category 是菜品分类，首页会自动按它生成筛选条。
+module.exports = [
+  {
+    id: 'chicken',
+    emoji: '🍗',
+    name: '炸鸡腿',
+    category: '炸物',
+    desc: '腌制 12 小时，外皮酥到掉渣',
+    price: 9,
+    tag: '招牌',
+  },
+  {
+    id: 'skewer',
+    emoji: '🍢',
+    name: '炸里脊串',
+    category: '串串',
+    desc: '现穿现炸，撒辣椒面',
+    price: 3,
+    tag: '热卖',
+  },
+  {
+    id: 'tofu',
+    emoji: '🧈',
+    name: '炸豆腐',
+    category: '小吃',
+    desc: '外酥里嫩，配蒜蓉酱',
+    price: 6,
+    tag: '',
+  },
+  {
+    id: 'potato',
+    emoji: '🍟',
+    name: '炸土豆片',
+    category: '小吃',
+    desc: '薄脆口感，撒梅子粉',
+    price: 5,
+    tag: '',
+  },
+  {
+    id: 'squid',
+    emoji: '🦑',
+    name: '炸鱿鱼须',
+    category: '炸物',
+    desc: '弹牙有嚼劲，椒盐味',
+    price: 10,
+    tag: '新品',
+  },
+  {
+    id: 'drink',
+    emoji: '🥤',
+    name: '冰镇酸梅汤',
+    category: '饮品',
+    desc: '解腻神器，炸物好搭档',
+    price: 4,
+    tag: '',
+  },
+  {
+    id: 'ppp',
+    emoji: '##',
+    name: '冰bb',
+    category: '小吃',
+    desc: 'ksjdj',
+    price: 4,
+    tag: 'jj',
+    soldOut: true,
+  },
+];

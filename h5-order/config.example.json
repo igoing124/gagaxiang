@@ -1,0 +1,23 @@
+{
+  "port": 3000,
+  "adminPassword": "请改成你自己的口令",
+  "storeName": "嘎嘎香 乐山油炸串串",
+  "shopPhone": "15528775725",
+  "hours": "每天 17:00 - 次日 00:30",
+  "notice": "外卖配送，提交订单后商家会电话联系确认，线下支付",
+  "publicBaseUrl": "https://order.example.com",
+  "deliveryFeeCents": 300,
+  "freeDeliveryThresholdCents": 5000,
+  "amapKey": "",
+  "wechat": {
+    "enabled": false,
+    "appId": "",
+    "appSecret": "",
+    "_说明": {
+      "enabled": "是否启用微信公众号网页授权。false、留空或删除整个 wechat 字段时，系统完全不依赖微信配置，自动使用本机一键登录；缺少字段不会影响启动，也不会向顾客显示配置提示。",
+      "appId": "公众号 AppID。获取方式：登录 mp.weixin.qq.com → 设置与开发 → 基本配置 → 开发者ID(AppID)。用于拼接微信网页授权链接。",
+      "appSecret": "公众号 AppSecret。获取方式：公众号后台 → 设置与开发 → 基本配置 → 开发者密码(AppSecret)，按提示生成或重置。只在服务端用于 code 换取 openid，不要写进前端页面或公开仓库。",
+      "回调域名": "公众号后台 → 设置与开发 → 公众号设置 → 功能设置 → 网页授权域名，填写 publicBaseUrl 的域名（不带协议和路径），域名必须已备案并支持公网 HTTPS。完整回调地址由服务端自动拼接为 publicBaseUrl + /api/auth/wechat/callback。"
+    }
+  }
+}

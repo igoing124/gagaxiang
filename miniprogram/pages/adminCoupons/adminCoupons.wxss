@@ -1,0 +1,257 @@
+/* pages/adminCoupons/adminCoupons.wxss —— 商家发券 */
+.page {
+  padding: 32rpx;
+}
+
+.page-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin: 0 8rpx 24rpx;
+}
+
+.page-title {
+  margin: 0;
+  font-size: 40rpx;
+  font-weight: 700;
+}
+
+.head-link {
+  font-size: 24rpx;
+  color: #e8590c;
+}
+
+.card {
+  margin-bottom: 24rpx;
+  padding: 28rpx 32rpx;
+  background: #ffffff;
+  border-radius: 28rpx;
+  box-shadow: 0 8rpx 24rpx rgba(58, 36, 23, 0.06);
+}
+
+.card-title {
+  margin-bottom: 8rpx;
+  font-size: 28rpx;
+  font-weight: 700;
+  color: #6b5848;
+}
+
+/* 状态提示 */
+.state-card {
+  margin-top: 24rpx;
+  padding: 40rpx 32rpx;
+  background: #ffffff;
+  border-radius: 28rpx;
+  box-shadow: 0 8rpx 24rpx rgba(58, 36, 23, 0.06);
+}
+
+.state-title {
+  font-size: 32rpx;
+  font-weight: 700;
+}
+
+.state-text {
+  margin-top: 16rpx;
+  font-size: 24rpx;
+  line-height: 1.7;
+  color: #a08b78;
+}
+
+.openid {
+  display: block;
+  margin-top: 12rpx;
+  padding: 16rpx 20rpx;
+  font-family: Consolas, "SF Mono", Menlo, monospace;
+  font-size: 22rpx;
+  word-break: break-all;
+  color: #e8590c;
+  background: #fff7ee;
+  border-radius: 12rpx;
+}
+
+.copy-btn {
+  margin-top: 20rpx;
+  padding: 18rpx 0;
+  text-align: center;
+  font-size: 28rpx;
+  color: #ffffff;
+  background: #ff7a00;
+  border-radius: 999rpx;
+}
+
+/* 表单 */
+.form-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 18rpx 0;
+  border-bottom: 1rpx solid #f7efe7;
+}
+
+.form-label {
+  flex-shrink: 0;
+  font-size: 26rpx;
+  color: #6b5848;
+}
+
+.form-input {
+  flex: 1;
+  min-width: 0;
+  margin-left: 24rpx;
+  text-align: right;
+  font-size: 28rpx;
+  color: #3a2417;
+}
+
+.form-actions {
+  display: flex;
+  margin-top: 24rpx;
+}
+
+.btn-primary,
+.btn-ghost {
+  flex: 1;
+  height: 76rpx;
+  line-height: 76rpx;
+  text-align: center;
+  font-size: 28rpx;
+  border-radius: 999rpx;
+}
+
+.btn-primary {
+  color: #ffffff;
+  background: #ff7a00;
+}
+
+.btn-ghost {
+  margin-right: 20rpx;
+  color: #e8590c;
+  background: #fff7ee;
+  border: 1rpx solid #ffd8b0;
+}
+
+.btn-disabled {
+  background: #c0b0a0;
+}
+
+/* 模板列表 */
+.template-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 18rpx 0;
+  border-bottom: 1rpx solid #f7efe7;
+}
+
+.template-main {
+  flex: 1;
+  min-width: 0;
+}
+
+.template-name {
+  font-size: 28rpx;
+  font-weight: 600;
+}
+
+.template-desc {
+  margin-top: 6rpx;
+  font-size: 21rpx;
+  line-height: 1.5;
+  color: #a08b78;
+}
+
+.template-actions {
+  display: flex;
+  flex-shrink: 0;
+  margin-left: 16rpx;
+}
+
+.mini-btn {
+  padding: 8rpx 18rpx;
+  font-size: 22rpx;
+  color: #e8590c;
+  background: #fff7ee;
+  border: 1rpx solid #ffd8b0;
+  border-radius: 999rpx;
+}
+
+.template-actions .mini-btn {
+  margin-left: 10rpx;
+}
+
+.mini-btn-warn {
+  color: #c0392b;
+  background: #fff5f2;
+  border-color: #ffd0c0;
+}
+
+.empty-text {
+  padding: 20rpx 0;
+  text-align: center;
+  font-size: 24rpx;
+  color: #a08b78;
+}
+
+/* 发券 */
+.issue-hint {
+  margin-top: 10rpx;
+  font-size: 22rpx;
+  color: #a08b78;
+}
+
+.template-chips {
+  display: flex;
+  flex-wrap: wrap;
+  margin-top: 16rpx;
+}
+
+.template-chip {
+  margin: 0 12rpx 12rpx 0;
+  padding: 10rpx 20rpx;
+  font-size: 23rpx;
+  color: #6b5848;
+  background: #fff7ee;
+  border: 1rpx solid #f0e2d4;
+  border-radius: 999rpx;
+}
+
+.template-chip-active {
+  color: #ffffff;
+  background: #ff7a00;
+  border-color: #ff7a00;
+}
+
+.issue-input {
+  margin-top: 16rpx;
+  padding: 18rpx 20rpx;
+  font-size: 26rpx;
+  color: #3a2417;
+  background: #fff7ee;
+  border-radius: 16rpx;
+}
+
+/* 用户列表 */
+.user-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 18rpx 0;
+  border-bottom: 1rpx solid #f7efe7;
+}
+
+.user-main {
+  flex: 1;
+  min-width: 0;
+}
+
+.user-name {
+  font-size: 26rpx;
+  font-weight: 600;
+}
+
+.user-id {
+  margin-top: 4rpx;
+  font-size: 20rpx;
+  word-break: break-all;
+  color: #a08b78;
+}

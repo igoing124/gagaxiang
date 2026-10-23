@@ -1,0 +1,6 @@
+config.json
+data/orders.json
+data/user-coupons.json
+data/users.json
+data/backup-*/
+node_modules/

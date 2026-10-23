@@ -1,0 +1,76 @@
+<!-- pages/orderSuccess/orderSuccess.wxml —— 下单成功页 -->
+<view class="page" wx:if="{{order}}">
+  <view class="success-icon">✅</view>
+  <view class="success-title">下单成功</view>
+  <view class="success-sub">订单已提交，老板接单后会尽快联系你确认并配送！</view>
+
+  <view class="order-card">
+    <view class="row">
+      <text class="row-label">订单号</text>
+      <text class="row-value">{{order.id}}</text>
+    </view>
+    <view class="row" wx:if="{{order.isDelivery}}">
+      <text class="row-label">收货人</text>
+      <text class="row-value">{{order.receiverName}}</text>
+    </view>
+    <view class="row" wx:if="{{order.isDelivery}}">
+      <text class="row-label">电话</text>
+      <text class="row-value">{{order.receiverPhone}}</text>
+    </view>
+    <view class="row" wx:if="{{order.isDelivery}}">
+      <text class="row-label">地址</text>
+      <text class="row-value">{{order.address}}</text>
+    </view>
+    <view class="row">
+      <text class="row-label">商品</text>
+      <text class="row-value">{{order.itemsText}}</text>
+    </view>
+    <view class="row">
+      <text class="row-label">份数</text>
+      <text class="row-value">{{order.cartCount}} 份</text>
+    </view>
+    <view class="row" wx:if="{{order.discount > 0 || order.isDelivery}}">
+      <text class="row-label">商品金额</text>
+      <text class="row-value">¥{{order.totalPrice}}</text>
+    </view>
+    <view class="row" wx:if="{{order.isDelivery}}">
+      <text class="row-label">配送费</text>
+      <text class="row-value">{{order.deliveryFee > 0 ? '¥' + order.deliveryFee : '免配送费'}}</text>
+    </view>
+    <view class="row" wx:if="{{order.discount > 0}}">
+      <text class="row-label">优惠券</text>
+      <text class="row-value row-discount">-¥{{order.discount}}</text>
+    </view>
+    <view class="row">
+      <text class="row-label">订单金额</text>
+      <text class="row-value row-price">¥{{order.payablePrice}}</text>
+    </view>
+    <view class="row">
+      <text class="row-label">付款方式</text>
+      <text class="row-value">线下支付（商家联系确认）</text>
+    </view>
+    <view class="row" wx:if="{{order.remark}}">
+      <text class="row-label">备注</text>
+      <text class="row-value">{{order.remark}}</text>
+    </view>
+  </view>
+
+  <view class="success-actions">
+    <view class="success-btn success-btn-ghost" bindtap="onOrders">查看订单</view>
+    <view class="success-btn" bindtap="onBack" hover-class="success-btn-hover">
+      返回菜单
+    </view>
+  </view>
+</view>
+
+<view class="page empty" wx:elif="{{loading}}">
+  <view class="empty-emoji">⏳</view>
+  <view class="empty-text">加载中...</view>
+</view>
+
+<!-- 订单号对不上时的兜底页面 -->
+<view class="page empty" wx:else>
+  <view class="empty-emoji">🧾</view>
+  <view class="empty-text">没有找到这个订单</view>
+  <view class="success-btn" bindtap="onBack">返回菜单</view>
+</view>

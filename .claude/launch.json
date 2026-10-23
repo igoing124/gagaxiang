@@ -1,0 +1,11 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "h5-order",
+      "runtimeExecutable": "node",
+      "runtimeArgs": ["h5-order/server.js"],
+      "port": 3000
+    }
+  ]
+}

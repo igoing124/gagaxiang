@@ -1,0 +1,9 @@
+node_modules
+test
+tools
+*.md
+*.log
+.workbuddy
+.wbapp_*
+config.example.json
+start.bat

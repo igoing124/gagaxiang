@@ -1,0 +1,573 @@
+/* pages/profile/profile.wxss ——「我的」页样式 */
+
+.page {
+  padding: 40rpx 32rpx 80rpx;
+}
+
+/* ========== 已登录：用户卡片 ========== */
+.user-card {
+  display: flex;
+  align-items: center;
+  padding: 36rpx 32rpx;
+  color: #ffffff;
+  background: linear-gradient(135deg, #3a2417 0%, #5c3a24 100%);
+  border-radius: 32rpx;
+  box-shadow: 0 16rpx 32rpx rgba(58, 36, 23, 0.18);
+}
+
+.avatar-wrap {
+  position: relative;
+  flex-shrink: 0;
+}
+
+.avatar-wrap-hover {
+  opacity: 0.85;
+}
+
+/* 已登录头像右下角的「换头像」小徽标 */
+.avatar-edit-badge {
+  position: absolute;
+  right: -8rpx;
+  bottom: -8rpx;
+  padding: 4rpx 12rpx;
+  font-size: 18rpx;
+  color: #ffffff;
+  background: #ff7a00;
+  border: 3rpx solid #ffffff;
+  border-radius: 999rpx;
+}
+
+.avatar {
+  width: 112rpx;
+  height: 112rpx;
+  border-radius: 50%;
+  background: #fff1e3;
+  border: 4rpx solid rgba(255, 255, 255, 0.35);
+}
+
+.avatar-default {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 60rpx;
+}
+
+.avatar-large {
+  width: 160rpx;
+  height: 160rpx;
+  font-size: 88rpx;
+}
+
+.user-info {
+  flex: 1;
+  min-width: 0;
+  margin-left: 24rpx;
+}
+
+.user-name {
+  font-size: 36rpx;
+  font-weight: 700;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.user-sub {
+  margin-top: 8rpx;
+  font-size: 22rpx;
+  color: #f3d9c4;
+}
+
+.logout-btn {
+  flex-shrink: 0;
+  padding: 10rpx 22rpx;
+  font-size: 22rpx;
+  color: #f3d9c4;
+  border: 1rpx solid rgba(243, 217, 196, 0.5);
+  border-radius: 999rpx;
+}
+
+.logout-btn-hover {
+  opacity: 0.7;
+}
+
+/* ========== 订单统计 ========== */
+.stats-card {
+  display: flex;
+  align-items: center;
+  margin-top: 24rpx;
+  padding: 32rpx;
+  background: #ffffff;
+  border-radius: 28rpx;
+  box-shadow: 0 8rpx 24rpx rgba(58, 36, 23, 0.06);
+}
+
+.stat {
+  flex: 1;
+  text-align: center;
+}
+
+.stat-num {
+  font-size: 44rpx;
+  font-weight: 700;
+  color: #e8590c;
+}
+
+.stat-label {
+  margin-top: 8rpx;
+  font-size: 24rpx;
+  color: #a08b78;
+}
+
+.stat-divider {
+  width: 1rpx;
+  height: 64rpx;
+  background: #f3e8dc;
+}
+
+/* ========== 最近订单 ========== */
+.section-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin: 36rpx 8rpx 20rpx;
+}
+
+.section-title {
+  font-size: 30rpx;
+  font-weight: 700;
+}
+
+.section-more {
+  font-size: 24rpx;
+  color: #e8590c;
+}
+
+.section-more-hover {
+  opacity: 0.7;
+}
+
+.order-card {
+  margin-bottom: 20rpx;
+  padding: 28rpx 32rpx;
+  background: #ffffff;
+  border-radius: 28rpx;
+  box-shadow: 0 8rpx 24rpx rgba(58, 36, 23, 0.06);
+}
+
+.order-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.order-id {
+  font-family: Consolas, "SF Mono", Menlo, monospace;
+  font-size: 22rpx;
+  color: #8c7b6b;
+}
+
+.order-status {
+  padding: 4rpx 14rpx;
+  font-size: 20rpx;
+  color: #e8590c;
+  background: #fff0e0;
+  border-radius: 999rpx;
+}
+
+.order-items {
+  margin-top: 16rpx;
+  font-size: 28rpx;
+  font-weight: 600;
+  line-height: 1.6;
+}
+
+/* 配送地址 */
+.order-delivery {
+  display: inline-block;
+  max-width: 100%;
+  box-sizing: border-box;
+  margin-top: 12rpx;
+  padding: 4rpx 14rpx;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  font-size: 20rpx;
+  color: #e8590c;
+  background: #fff0e0;
+  border-radius: 8rpx;
+}
+
+.order-meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 14rpx;
+  font-size: 22rpx;
+  color: #a08b78;
+}
+
+.order-total {
+  font-size: 30rpx;
+  font-weight: 700;
+  color: #e8590c;
+}
+
+.order-discount {
+  margin-top: 4rpx;
+  text-align: right;
+  font-size: 20rpx;
+  color: #a08b78;
+}
+
+/* ========== 空状态 ========== */
+.empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 60rpx 0 40rpx;
+}
+
+.empty-emoji {
+  font-size: 100rpx;
+}
+
+.empty-text {
+  margin-top: 20rpx;
+  font-size: 26rpx;
+  color: #a08b78;
+}
+
+.empty-btn {
+  margin-top: 32rpx;
+  padding: 16rpx 52rpx;
+  font-size: 26rpx;
+  color: #ffffff;
+  background: #ff7a00;
+  border-radius: 999rpx;
+  box-shadow: 0 10rpx 20rpx rgba(255, 122, 0, 0.24);
+}
+
+.empty-btn-hover {
+  opacity: 0.85;
+  transform: scale(0.98);
+}
+
+.page-note {
+  margin-top: 36rpx;
+  text-align: center;
+  font-size: 20rpx;
+  line-height: 1.6;
+  color: #c0b0a0;
+}
+
+/* ========== 未登录：登录卡片 ========== */
+.login-card {
+  margin-top: 80rpx;
+  padding: 64rpx 40rpx 48rpx;
+  text-align: center;
+  background: #ffffff;
+  border-radius: 32rpx;
+  box-shadow: 0 12rpx 32rpx rgba(58, 36, 23, 0.08);
+}
+
+.login-emoji {
+  font-size: 120rpx;
+  line-height: 1;
+}
+
+.login-title {
+  margin-top: 28rpx;
+  font-size: 38rpx;
+  font-weight: 700;
+}
+
+.login-sub {
+  margin-top: 14rpx;
+  font-size: 26rpx;
+  line-height: 1.6;
+  color: #a08b78;
+}
+
+.login-btn {
+  height: 88rpx;
+  margin: 44rpx 40rpx 0;
+  line-height: 88rpx;
+  font-size: 30rpx;
+  font-weight: 600;
+  color: #ffffff;
+  background: #ff7a00;
+  border-radius: 999rpx;
+  box-shadow: 0 12rpx 24rpx rgba(255, 122, 0, 0.28);
+}
+
+.login-btn-hover {
+  opacity: 0.9;
+  transform: scale(0.99);
+}
+
+.login-btn-disabled {
+  background: #c0b0a0;
+  box-shadow: none;
+}
+
+.login-note {
+  margin-top: 28rpx;
+  font-size: 20rpx;
+  line-height: 1.6;
+  color: #c0b0a0;
+}
+
+/* ========== 设置头像昵称 ========== */
+.setup-card {
+  margin-top: 40rpx;
+  padding: 48rpx 40rpx;
+  text-align: center;
+  background: #ffffff;
+  border-radius: 32rpx;
+  box-shadow: 0 12rpx 32rpx rgba(58, 36, 23, 0.08);
+}
+
+.setup-title {
+  font-size: 36rpx;
+  font-weight: 700;
+}
+
+.setup-sub {
+  margin-top: 12rpx;
+  font-size: 24rpx;
+  color: #a08b78;
+}
+
+.setup-avatar {
+  position: relative;
+  display: inline-block;
+  margin-top: 44rpx;
+}
+
+.setup-avatar-hover {
+  opacity: 0.85;
+}
+
+.setup-avatar-tip {
+  margin-top: 16rpx;
+  font-size: 22rpx;
+  color: #c0b0a0;
+}
+
+.avatar-badge {
+  position: absolute;
+  right: -8rpx;
+  bottom: -8rpx;
+  padding: 8rpx 16rpx;
+  font-size: 20rpx;
+  color: #ffffff;
+  background: #ff7a00;
+  border: 4rpx solid #ffffff;
+  border-radius: 999rpx;
+}
+
+.nickname-label {
+  margin-top: 44rpx;
+  text-align: left;
+  font-size: 24rpx;
+  color: #6b5848;
+}
+
+.nickname-input {
+  box-sizing: border-box;
+  width: 100%;
+  height: 88rpx;
+  margin-top: 12rpx;
+  padding: 0 28rpx;
+  font-size: 30rpx;
+  line-height: 88rpx;
+  color: #3a2417;
+  background: #fff7ee;
+  border: 1rpx solid #ffe0c2;
+  border-radius: 20rpx;
+}
+
+.nickname-placeholder {
+  color: #c0b0a0;
+}
+
+.setup-reset {
+  margin-top: 20rpx;
+  font-size: 22rpx;
+  color: #a08b78;
+  text-decoration: underline;
+}
+
+.setup-actions {
+  display: flex;
+  margin-top: 40rpx;
+}
+
+.setup-cancel,
+.setup-confirm {
+  flex: 1;
+  height: 84rpx;
+  line-height: 84rpx;
+  font-size: 28rpx;
+  border-radius: 999rpx;
+}
+
+.setup-cancel {
+  margin-right: 20rpx;
+  color: #8c7b6b;
+  background: #f7f1ea;
+  border: 1rpx solid #eadfd3;
+}
+
+.setup-confirm {
+  color: #ffffff;
+  background: #ff7a00;
+}
+
+.setup-confirm-disabled {
+  background: #c0b0a0;
+}
+
+.setup-btn-hover {
+  opacity: 0.85;
+  transform: scale(0.99);
+}
+
+/* ========== 门店信息 ========== */
+.store-card {
+  margin-top: 36rpx;
+  padding: 32rpx;
+  background: #ffffff;
+  border-radius: 28rpx;
+  box-shadow: 0 8rpx 24rpx rgba(58, 36, 23, 0.06);
+}
+
+.store-title {
+  font-size: 30rpx;
+  font-weight: 700;
+}
+
+.store-row {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 18rpx;
+  font-size: 26rpx;
+}
+
+.store-label {
+  color: #a08b78;
+}
+
+.store-value {
+  color: #3a2417;
+}
+
+.store-actions {
+  display: flex;
+  margin-top: 28rpx;
+}
+
+.store-call,
+.share-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: 1;
+  box-sizing: border-box;
+  height: 76rpx;
+  padding: 0;
+  font-size: 28rpx;
+  font-weight: 600;
+  border-radius: 999rpx;
+}
+
+.store-call {
+  margin-right: 20rpx;
+  color: #e8590c;
+  background: #fff7ee;
+  border: 1rpx solid #ffd8b0;
+}
+
+/* 原生 button 默认有灰底、内边距和 ::after 边框，这里全部重置 */
+.share-btn {
+  margin: 0;
+  color: #ffffff;
+  background: #ff7a00;
+  border: none;
+}
+
+.share-btn::after {
+  border: none;
+}
+
+.store-btn-hover {
+  opacity: 0.85;
+  transform: scale(0.98);
+}
+
+/* ========== 我的优惠券 ========== */
+.coupon-card {
+  padding: 8rpx 28rpx;
+  background: #ffffff;
+  border-radius: 28rpx;
+  box-shadow: 0 8rpx 24rpx rgba(58, 36, 23, 0.06);
+}
+
+.coupon-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20rpx 0;
+  border-bottom: 1rpx solid #f7efe7;
+}
+
+.coupon-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.coupon-name {
+  font-size: 28rpx;
+  font-weight: 700;
+  color: #e8590c;
+}
+
+.coupon-desc {
+  margin-top: 6rpx;
+  font-size: 22rpx;
+  color: #a08b78;
+}
+
+.coupon-tag {
+  flex-shrink: 0;
+  margin-left: 16rpx;
+  padding: 4rpx 14rpx;
+  font-size: 20rpx;
+  color: #e8590c;
+  background: #fff0e0;
+  border-radius: 999rpx;
+}
+
+.coupon-tag-ok {
+  color: #2e7d32;
+  background: #eef7ed;
+}
+
+.coupon-empty {
+  padding: 24rpx 28rpx;
+  font-size: 24rpx;
+  color: #a08b78;
+  background: #ffffff;
+  border-radius: 28rpx;
+  box-shadow: 0 8rpx 24rpx rgba(58, 36, 23, 0.06);
+}
+
+/* 商家入口 */
+.admin-entry {
+  margin-top: 32rpx;
+  text-align: center;
+  font-size: 22rpx;
+  color: #a08b78;
+  text-decoration: underline;
+}

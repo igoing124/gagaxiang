@@ -1,0 +1,43 @@
+{
+  "pages": [
+    "pages/index/index",
+    "pages/detail/detail",
+    "pages/checkout/checkout",
+    "pages/orderSuccess/orderSuccess",
+    "pages/orders/orders",
+    "pages/profile/profile",
+    "pages/adminOrders/adminOrders",
+    "pages/adminDishes/adminDishes",
+    "pages/adminCoupons/adminCoupons"
+  ],
+  "window": {
+    "navigationBarTitleText": "嘎嘎香",
+    "navigationBarBackgroundColor": "#3A2417",
+    "navigationBarTextStyle": "white",
+    "backgroundColor": "#FFF8F0",
+    "backgroundTextStyle": "dark"
+  },
+  "tabBar": {
+    "color": "#8C7B6B",
+    "selectedColor": "#FF7A00",
+    "backgroundColor": "#FFFFFF",
+    "borderStyle": "black",
+    "list": [
+      {
+        "pagePath": "pages/index/index",
+        "text": "点单",
+        "iconPath": "images/icons/goods.png",
+        "selectedIconPath": "images/icons/goods-active.png"
+      },
+      {
+        "pagePath": "pages/profile/profile",
+        "text": "我的",
+        "iconPath": "images/icons/profile.png",
+        "selectedIconPath": "images/icons/profile-active.png"
+      }
+    ]
+  },
+  "style": "v2",
+  "sitemapLocation": "sitemap.json",
+  "lazyCodeLoading": "requiredComponents"
+}

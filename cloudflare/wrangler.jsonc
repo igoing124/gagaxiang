@@ -1,0 +1,38 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "gagaxiang-order",
+  "main": "src/worker.js",
+  "compatibility_date": "2025-09-01",
+  "workers_dev": true,
+  "assets": {
+    "directory": "../h5-order/public",
+    "binding": "ASSETS",
+    "run_worker_first": true
+  },
+  "durable_objects": {
+    "bindings": [
+      {
+        "name": "SHOP",
+        "class_name": "Shop"
+      }
+    ]
+  },
+  "migrations": [
+    {
+      "tag": "v1",
+      "new_sqlite_classes": ["Shop"]
+    }
+  ],
+  "vars": {
+    "STORE_NAME": "嘎嘎香 乐山油炸串串",
+    "SHOP_PHONE": "15528775725",
+    "HOURS": "每天 17:00 - 次日 00:30",
+    "NOTICE": "外卖配送，提交订单后商家会电话联系确认，线下支付",
+    "DELIVERY_FEE_CENTS": "300",
+    "FREE_DELIVERY_THRESHOLD_CENTS": "5000",
+    "PUBLIC_BASE_URL": "https://xaingdepibao.icu"
+  },
+  "observability": {
+    "enabled": true
+  }
+}
