@@ -7,6 +7,9 @@ set -euo pipefail
 
 cd "$(dirname "$0")/.."
 
+# 清掉可能劫持 Git 流量的代理环境变量（沙箱/工具链常注入，会导致连接被重置）
+unset http_proxy https_proxy HTTP_PROXY HTTPS_PROXY ALL_PROXY all_proxy
+
 # ---- 1. 环境检查 ----
 if ! git rev-parse --git-dir >/dev/null 2>&1; then
   echo "[错误] 当前目录不是 Git 仓库"
@@ -15,9 +18,19 @@ fi
 
 if ! git remote get-url origin >/dev/null 2>&1; then
   echo "[错误] 未配置远程仓库，请先执行："
-  echo "       git remote add origin https://github.com/igoing124/gagaxiang.git"
+  echo "       git remote add origin git@github.com:igoing124/gagaxiang.git"
   exit 1
 fi
+
+# 远程地址必须是 SSH，否则会走 HTTPS 并被网络干扰
+REMOTE_URL=$(git remote get-url origin)
+case "$REMOTE_URL" in
+  git@*|ssh://*) ;;
+  *)
+    echo "[修正] 远程地址是 HTTPS，正在切换为 SSH（避免网络重置）"
+    git remote set-url origin git@github.com:igoing124/gagaxiang.git
+    ;;
+esac
 
 # ---- 2. 变更检查 ----
 if [ -z "$(git status --porcelain)" ]; then
@@ -52,21 +65,15 @@ git status --short | sed 's/^/      /'
 echo "[2/3] 提交：$MSG"
 git commit -q -m "$MSG"
 
-# ---- 5. 代理检查 ----
-# 网络不通时自动尝试 FlClash 的 7890 端口
+# ---- 5. 推送 ----
+# 走 SSH（ssh.github.com:443），不依赖任何本地代理
 echo "[3/3] 推送..."
 if ! git push 2>&1 | tee /tmp/gitpush.log | grep -qE '^To |Everything up-to-date'; then
-  if grep -qE 'schannel|Could not resolve|Failed to connect|Connection' /tmp/gitpush.log 2>/dev/null; then
-    echo "[提示] 网络异常，尝试使用本地代理 127.0.0.1:7890 重试..."
-    if git -c http.proxy=http://127.0.0.1:7890 -c https.proxy=http://127.0.0.1:7890 push; then
-      echo "[完成] 已通过代理推送成功"
-      echo "       若经常需要，执行：git config http.proxy http://127.0.0.1:7890"
-      exit 0
-    fi
-    echo "[失败] 代理也推送不成功。请确认 FlClash 是否已开启。"
-    exit 3
-  fi
-  echo "[失败] 推送未成功，上方为原始输出"
+  echo
+  echo "[失败] 推送未成功，上方为原始输出。排查顺序："
+  echo "  1. 执行 ssh -T git@github.com 看密钥是否仍有效"
+  echo "  2. 执行 git remote -v 确认地址是 git@github.com: 开头（SSH），不是 https://"
+  echo "  3. 若报 Permission denied，需把 ~/.ssh/id_ed25519.pub 内容加到 GitHub 账号"
   exit 3
 fi
 
