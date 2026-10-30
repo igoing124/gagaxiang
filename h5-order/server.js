@@ -57,6 +57,8 @@ const GEOCODE_RATE_WINDOW_MS = 60 * 1000;
 const MAX_ITEMS = 50;
 const MAX_ITEM_COUNT = 99;
 const MAX_AVATAR_LENGTH = 200000;
+const MAX_DISH_IMAGE_LENGTH = 120000;
+const MAX_BUNDLE_TIERS = 8;
 const MAX_TOKENS_PER_USER = 5;
 
 const STATUS = {
@@ -126,6 +128,153 @@ function cleanText(raw, maxLength) {
     .replace(/\s+/g, ' ')
     .trim()
     .slice(0, maxLength);
+}
+
+function normalizeDishImage(raw) {
+  const value = String(raw || '').trim();
+  if (!value) return '';
+
+  if (
+    !/^data:image\/(?:jpeg|png|webp);base64,[A-Za-z0-9+/=]+$/.test(value) &&
+    !/^https:\/\/[^\s]+$/i.test(value)
+  ) {
+    throw new HttpError(400, '菜品图片格式不支持，请重新上传');
+  }
+
+  if (value.length > MAX_DISH_IMAGE_LENGTH) {
+    throw new HttpError(400, '菜品图片太大，请重新上传');
+  }
+
+  return value;
+}
+
+function normalizeBundleTiers(raw, priceCents, strict) {
+  if (!Array.isArray(raw) || raw.length === 0) return [];
+  if (strict && raw.length > MAX_BUNDLE_TIERS) {
+    throw new HttpError(400, `最多设置 ${MAX_BUNDLE_TIERS} 个数量优惠`);
+  }
+
+  const unitPriceCents = Math.round(Number(priceCents) || 0);
+  const tiers = [];
+  const seen = new Set();
+
+  for (const item of raw.slice(0, MAX_BUNDLE_TIERS)) {
+    const source = item && typeof item === 'object' ? item : {};
+    const quantity = Number(source.quantity);
+    const totalPriceCents = Math.round(Number(source.totalPriceCents));
+
+    if (
+      !Number.isInteger(quantity) ||
+      quantity < 2 ||
+      quantity > MAX_ITEM_COUNT ||
+      !Number.isInteger(totalPriceCents) ||
+      totalPriceCents <= 0
+    ) {
+      if (strict) throw new HttpError(400, '数量优惠填写不正确');
+      continue;
+    }
+
+    if (seen.has(quantity)) {
+      if (strict) throw new HttpError(400, '数量优惠中有重复数量');
+      continue;
+    }
+
+    if (unitPriceCents > 0 && totalPriceCents >= unitPriceCents * quantity) {
+      if (strict) {
+        throw new HttpError(
+          400,
+          '数量优惠合计必须低于按基础单价计算的金额'
+        );
+      }
+      continue;
+    }
+
+    seen.add(quantity);
+    tiers.push({ quantity, totalPriceCents });
+  }
+
+  return tiers.sort((a, b) => a.quantity - b.quantity);
+}
+
+function formatCents(cents) {
+  return '¥' + (Math.round(Number(cents) || 0) / 100)
+    .toFixed(2)
+    .replace(/\.00$/, '')
+    .replace(/(\.\d)0$/, '$1');
+}
+
+function calculateDishPricing(dish, count) {
+  const quantity = Math.max(0, Math.floor(Number(count) || 0));
+  const unitPriceCents = Math.round(Number(dish.priceCents) || 0);
+  const tiers = normalizeBundleTiers(dish.bundleTiers, unitPriceCents, false);
+
+  if (quantity === 0 || unitPriceCents <= 0) {
+    return { subtotalCents: 0, priceSummary: '' };
+  }
+
+  const best = new Array(quantity + 1).fill(Infinity);
+  const choices = new Array(quantity + 1).fill(null);
+  best[0] = 0;
+
+  for (let current = 1; current <= quantity; current += 1) {
+    best[current] = best[current - 1] + unitPriceCents;
+    choices[current] = {
+      quantity: 1,
+      totalPriceCents: unitPriceCents,
+    };
+
+    tiers.forEach((tier) => {
+      if (tier.quantity > current) return;
+
+      const candidate =
+        best[current - tier.quantity] + tier.totalPriceCents;
+
+      if (candidate < best[current]) {
+        best[current] = candidate;
+        choices[current] = tier;
+      }
+    });
+  }
+
+  const partCounts = new Map();
+  let remaining = quantity;
+
+  while (remaining > 0) {
+    const part = choices[remaining];
+    if (!part || part.quantity > remaining) break;
+
+    const key = part.quantity + ':' + part.totalPriceCents;
+    const saved = partCounts.get(key) || {
+      quantity: part.quantity,
+      totalPriceCents: part.totalPriceCents,
+      count: 0,
+    };
+    saved.count += 1;
+    partCounts.set(key, saved);
+    remaining -= part.quantity;
+  }
+
+  if (remaining > 0) {
+    partCounts.set('1:' + unitPriceCents, {
+      quantity: 1,
+      totalPriceCents: unitPriceCents,
+      count: remaining,
+    });
+  }
+
+  const priceSummary = Array.from(partCounts.values())
+    .sort((a, b) => b.quantity - a.quantity)
+    .map(
+      (part) =>
+        `${part.quantity * part.count}${dish.unit || '份'} ` +
+        formatCents(part.totalPriceCents * part.count)
+    )
+    .join(' + ');
+
+  return {
+    subtotalCents: best[quantity],
+    priceSummary,
+  };
 }
 
 function yuanToCents(value) {
@@ -251,6 +400,8 @@ function normalizeMenu(rawList, legacyState) {
         priceCents,
         unit: String(raw.unit || '份').trim(),
         tag: String(raw.tag || '').trim(),
+        imageUrl: String(raw.imageUrl || '').trim(),
+        bundleTiers: normalizeBundleTiers(raw.bundleTiers, priceCents, false),
         soldOut:
           raw.soldOut != null ? !!raw.soldOut : legacySoldOut,
         enabled: raw.enabled !== false,
@@ -393,6 +544,10 @@ function publicDish(dish) {
     priceCents: dish.priceCents,
     unit: dish.unit,
     tag: dish.tag,
+    imageUrl: dish.imageUrl || '',
+    bundleTiers: Array.isArray(dish.bundleTiers)
+      ? dish.bundleTiers
+      : [],
     soldOut: !!dish.soldOut,
   };
 }
@@ -871,7 +1026,8 @@ function normalizeOrderItems(rawItems) {
 
   counts.forEach((count, id) => {
     const dish = menuById.get(id);
-    const subtotal = dish.priceCents * count;
+    const pricing = calculateDishPricing(dish, count);
+    const subtotal = pricing.subtotalCents;
     subtotalCents += subtotal;
     itemCount += count;
 
@@ -881,6 +1037,7 @@ function normalizeOrderItems(rawItems) {
       priceCents: dish.priceCents,
       unit: dish.unit,
       count,
+      priceSummary: pricing.priceSummary,
       subtotalCents: subtotal,
     });
   });
@@ -982,6 +1139,7 @@ function createOrder(body, user, ip) {
     pickupDate: dateKey,
     dailySeq: pickup.dailySeq,
     status: STATUS.PENDING,
+    statusChangedAt: now,
     accountId: user.id,
     accountNickname: user.nickname,
     accountPhone: user.phone,
@@ -1066,6 +1224,8 @@ function customerOrderView(order) {
     id: order.id,
     pickupNo: order.pickupNo,
     status: order.status,
+    statusChangedAt:
+      Number(order.statusChangedAt) || Number(order.updatedAt) || 0,
     recipientName: order.recipientName || '',
     phone: order.phone || '',
     address: order.address || '',
@@ -1314,7 +1474,7 @@ if (process.env.TRUST_PROXY === '1') {
   app.set('trust proxy', 1);
 }
 
-app.use(express.json({ limit: '256kb' }));
+app.use(express.json({ limit: '512kb' }));
 app.use((req, res, next) => {
   res.set('X-Content-Type-Options', 'nosniff');
   res.set('Referrer-Policy', 'same-origin');
@@ -1325,6 +1485,17 @@ app.use(
     index: false,
     etag: true,
     maxAge: 0,
+    setHeaders(res, filePath) {
+      // index.html 里用 ?v=20261029-1 这种方式给 js/css 打版本号，
+      // 带版本号的静态资源可以长缓存，回访时不用再回来问一次（省 2-3 个往返）。
+      // 改了样式或脚本记得同步改 index.html 里的 v=，否则老用户会一直用旧文件。
+      if (/\.(?:js|css)$/i.test(filePath)) {
+        res.setHeader(
+          'Cache-Control',
+          'public, max-age=31536000, immutable'
+        );
+      }
+    },
   })
 );
 
@@ -1598,6 +1769,26 @@ app.get('/api/admin/orders', requireAdmin, (req, res) => {
   res.json({ orders: list, serverTime: Date.now() });
 });
 
+// 商家备份：格式与 Cloudflare 版的导出完全一致，
+// 这样 tools/import-cloudflare-export.py 也能直接吃云托管自己的备份（互导）。
+app.get('/api/admin/export', requireAdmin, (req, res) => {
+  res.set(
+    'Content-Disposition',
+    'attachment; filename="gagaxiang-backup-' + localDateKey(Date.now()) + '.json"'
+  );
+
+  res.json({
+    exportedAt: Date.now(),
+    menu,
+    orders,
+    users,
+    couponTemplates,
+    userCoupons,
+    // 云托管版把菜品图片内联在 dish.imageUrl 里，没有独立的图片存储
+    dishImages: {},
+  });
+});
+
 app.post(
   '/api/admin/orders/:id/status',
   requireAdmin,
@@ -1615,11 +1806,13 @@ app.post(
 
     const previousStatus = order.status;
     const previousUpdatedAt = order.updatedAt;
+    const previousStatusChangedAt = order.statusChangedAt;
     let userCoupon = null;
     let previousCoupon = null;
 
     order.status = nextStatus;
     order.updatedAt = Date.now();
+    order.statusChangedAt = order.updatedAt;
 
     if (nextStatus === STATUS.CANCELLED) {
       userCoupon = cancelOrderCoupon(order);
@@ -1642,6 +1835,7 @@ app.post(
     } catch (err) {
       order.status = previousStatus;
       order.updatedAt = previousUpdatedAt;
+      order.statusChangedAt = previousStatusChangedAt;
 
       if (userCoupon && previousCoupon) {
         userCoupon.status = previousCoupon.status;
@@ -1676,6 +1870,8 @@ app.post('/api/admin/menu', requireAdmin, (req, res) => {
   const name = String(body.name || '').trim().slice(0, 30);
   const category = String(body.category || '').trim().slice(0, 20);
   const priceCents = Math.round(Number(body.priceCents));
+  const imageUrl = normalizeDishImage(body.imageUrl);
+  const bundleTiers = normalizeBundleTiers(body.bundleTiers, priceCents, true);
 
   if (!name) throw new HttpError(400, '请填写菜品名称');
   if (!category) throw new HttpError(400, '请填写菜品分类');
@@ -1695,6 +1891,8 @@ app.post('/api/admin/menu', requireAdmin, (req, res) => {
       .trim()
       .slice(0, 8);
     existing.tag = String(body.tag || '').trim().slice(0, 10);
+    existing.imageUrl = imageUrl;
+    existing.bundleTiers = bundleTiers;
     existing.soldOut =
       body.soldOut != null ? !!body.soldOut : existing.soldOut;
     existing.enabled =
@@ -1715,6 +1913,8 @@ app.post('/api/admin/menu', requireAdmin, (req, res) => {
       priceCents,
       unit: String(body.unit || '份').trim().slice(0, 10) || '份',
       tag: String(body.tag || '').trim().slice(0, 10),
+      imageUrl,
+      bundleTiers,
       soldOut: !!body.soldOut,
       enabled: body.enabled !== false,
       sort: maxSort + 10,

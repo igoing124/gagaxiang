@@ -32,6 +32,22 @@ async function isCloudEnabled() {
   }
 }
 
+// 只判断「云环境是否可用」，不等 login 云函数。
+// 菜单是只读的，用这个门闸就能和登录并行，首屏不用排队。
+async function isCloudInited() {
+  const app = getApp();
+
+  if (!app || !app.globalData || !app.globalData.cloudInited) {
+    return false;
+  }
+
+  try {
+    return await app.globalData.cloudInited;
+  } catch (e) {
+    return false;
+  }
+}
+
 // 统一调用名为 api 的云函数
 function callFunction(action, data = {}) {
   return wx.cloud
@@ -240,6 +256,9 @@ async function listCoupons() {
 let dishesCache = null;
 let dishesCacheAt = 0;
 const DISHES_CACHE_MS = 5 * 60 * 1000;
+// 本机菜单缓存：小程序被关掉再打开时，首屏可以直接用上次的菜单，不用等网络
+const DISHES_STORAGE_KEY = 'dishesCacheV1';
+const DISHES_STORAGE_MS = 24 * 60 * 60 * 1000;
 
 function normalizeLocalDish(dish) {
   return {
@@ -249,25 +268,66 @@ function normalizeLocalDish(dish) {
   };
 }
 
-function cacheDishes(dishes) {
+// persist 只在「确实拿到了云端菜单」时传 true，
+// 本地兜底菜单不写进缓存，避免把兜底菜单当成商家真实菜单缓存一天。
+function cacheDishes(dishes, persist) {
   dishesCache = dishes;
   dishesCacheAt = Date.now();
+
+  if (persist) {
+    try {
+      wx.setStorageSync(DISHES_STORAGE_KEY, {
+        list: dishes,
+        at: Date.now(),
+      });
+    } catch (e) {
+      // 存不下就算了，不影响本次使用
+    }
+  }
+
   return dishes;
+}
+
+// 首屏马上能渲染的菜单：优先上次云端菜单，其次本地内置菜单
+function getInstantDishes() {
+  try {
+    const cached = wx.getStorageSync(DISHES_STORAGE_KEY);
+
+    if (
+      cached &&
+      Array.isArray(cached.list) &&
+      cached.list.length > 0 &&
+      Date.now() - (Number(cached.at) || 0) < DISHES_STORAGE_MS
+    ) {
+      return cached.list;
+    }
+  } catch (e) {
+    // 读缓存失败就用本地菜单
+  }
+
+  return localGoods.map(normalizeLocalDish);
 }
 
 // 商家改了菜单后，让本机缓存立即失效
 function invalidateDishesCache() {
   dishesCache = null;
   dishesCacheAt = 0;
+
+  try {
+    wx.removeStorageSync(DISHES_STORAGE_KEY);
+  } catch (e) {
+    // 忽略
+  }
 }
 
 // 读取菜单：云端有菜单就用云端，没有配置云开发或云端还没导入时用本地 goods.js
+// 注意用的是 isCloudInited（不等 login），首页首屏可以和登录并行，不用排队。
 async function listDishes() {
   if (dishesCache && Date.now() - dishesCacheAt < DISHES_CACHE_MS) {
     return dishesCache;
   }
 
-  const cloud = await isCloudEnabled();
+  const cloud = await isCloudInited();
 
   if (!cloud) {
     return cacheDishes(localGoods.map(normalizeLocalDish));
@@ -283,12 +343,14 @@ async function listDishes() {
     }
 
     return cacheDishes(
-      Array.isArray(result.dishes) ? result.dishes : []
+      Array.isArray(result.dishes) ? result.dishes : [],
+      true
     );
   } catch (e) {
     console.warn('云端菜单加载失败，使用本地菜单', e);
-    // 失败时不写缓存，下次进入页面会重试
-    return localGoods.map(normalizeLocalDish);
+    // 失败时不写缓存，下次进入页面会重试；
+    // 有上次的云端菜单就继续用它，别把商家改过的价格换成内置菜单
+    return getInstantDishes();
   }
 }
 
@@ -404,6 +466,8 @@ async function saveUserProfile(nickName) {
 
 module.exports = {
   isCloudEnabled,
+  isCloudInited,
+  getInstantDishes,
   listOrders,
   createOrder,
   deleteOrder,

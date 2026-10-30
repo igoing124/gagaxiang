@@ -7,6 +7,31 @@ const TOKEN_KEY = 'h5_admin_token';
 const POLL_INTERVAL = 15000;
 const NEW_ORDER_HIGHLIGHT_MS = 30000;
 
+function readSavedAdminToken() {
+  try {
+    const saved = localStorage.getItem(TOKEN_KEY) || '';
+    if (saved) return saved;
+
+    const legacy = sessionStorage.getItem(TOKEN_KEY) || '';
+    if (legacy) {
+      localStorage.setItem(TOKEN_KEY, legacy);
+      sessionStorage.removeItem(TOKEN_KEY);
+    }
+    return legacy;
+  } catch (err) {
+    return '';
+  }
+}
+
+function clearSavedAdminToken() {
+  try {
+    localStorage.removeItem(TOKEN_KEY);
+    sessionStorage.removeItem(TOKEN_KEY);
+  } catch (err) {
+    // 忽略本机存储错误
+  }
+}
+
 const STATUS_TEXT = {
   pending: '待接单',
   making: '制作中',
@@ -15,7 +40,7 @@ const STATUS_TEXT = {
 };
 
 const state = {
-  token: sessionStorage.getItem(TOKEN_KEY) || '',
+  token: readSavedAdminToken(),
   orders: [],
   menu: [],
   categories: [],
@@ -30,6 +55,8 @@ const state = {
   newOrderSince: new Map(),
   audioCtx: null,
   editingDishId: '',
+  dishImageUrl: '',
+  dishTiers: [],
   editingCouponId: '',
   detailOrderId: '',
   dishQuery: '',
@@ -46,6 +73,9 @@ function cacheElements() {
     'orderFilters', 'ordersList', 'filterPendingCount', 'addDishBtn',
     'dishForm', 'dishFormTitle', 'dishId', 'dishName', 'dishCategory',
     'dishPrice', 'dishUnit', 'dishEmoji', 'dishTag', 'dishDesc',
+    'addDishTierBtn', 'dishTierList',
+    'dishImagePreview', 'chooseDishImageBtn', 'removeDishImageBtn',
+    'dishImageInput',
     'dishSoldOut', 'dishEnabled', 'cancelDishBtn', 'saveDishBtn',
     'adminMenuList', 'dishSearchInput', 'addCouponBtn', 'couponForm', 'couponFormTitle',
     'couponId', 'couponName', 'couponThreshold', 'couponDiscount',
@@ -68,6 +98,22 @@ function money(cents) {
 function centsToInput(cents) {
   const n = Math.round(Number(cents) || 0) / 100;
   return n ? String(n) : '';
+}
+
+function compactPrice(cents) {
+  return money(cents).replace(/\.00$/, '').replace(/(\.\d)0$/, '$1');
+}
+
+function formatDishPricing(dish) {
+  const unit = dish.unit || '份';
+  const tiers = Array.isArray(dish.bundleTiers) ? dish.bundleTiers : [];
+  const base = compactPrice(dish.priceCents) + '/' + unit;
+
+  if (tiers.length === 0) return base;
+
+  return base + ' · ' + tiers
+    .map((tier) => tier.quantity + unit + compactPrice(tier.totalPriceCents))
+    .join(' · ');
 }
 
 function formatTime(timestamp) {
@@ -106,6 +152,138 @@ function setAvatar(element, avatar) {
   } else {
     element.textContent = value || '🍢';
   }
+}
+
+function setDishImagePreview(imageUrl) {
+  const preview = els.dishImagePreview;
+  if (!preview) return;
+
+  preview.innerHTML = '';
+
+  if (imageUrl) {
+    const img = document.createElement('img');
+    img.src = imageUrl;
+    img.alt = '菜品图片预览';
+    preview.appendChild(img);
+  } else {
+    preview.appendChild(make('span', null, '暂无图片'));
+  }
+
+  els.removeDishImageBtn.classList.toggle('hidden', !imageUrl);
+}
+
+function renderDishTiers() {
+  const list = els.dishTierList;
+  if (!list) return;
+
+  list.innerHTML = '';
+
+  if (state.dishTiers.length === 0) {
+    list.appendChild(
+      make('p', 'dish-tier-empty', '暂无数量优惠，顾客按基础单价购买')
+    );
+    return;
+  }
+
+  state.dishTiers.forEach((tier, index) => {
+    const row = make('div', 'dish-tier-row');
+    row.dataset.tierIndex = String(index);
+
+    const quantityLabel = make('label', 'dish-tier-field');
+    quantityLabel.appendChild(make('span', null, '购买数量'));
+    const quantity = document.createElement('input');
+    quantity.type = 'number';
+    quantity.min = '2';
+    quantity.max = '99';
+    quantity.step = '1';
+    quantity.inputMode = 'numeric';
+    quantity.dataset.tierField = 'quantity';
+    quantity.placeholder = '3';
+    quantity.value = tier.quantity;
+    quantityLabel.appendChild(quantity);
+    row.appendChild(quantityLabel);
+
+    const unit = make('span', 'dish-tier-unit', els.dishUnit.value.trim() || '个');
+    row.appendChild(unit);
+
+    const priceLabel = make('label', 'dish-tier-field');
+    priceLabel.appendChild(make('span', null, '合计金额（元）'));
+    const totalPrice = document.createElement('input');
+    totalPrice.type = 'number';
+    totalPrice.min = '0.01';
+    totalPrice.step = '0.01';
+    totalPrice.inputMode = 'decimal';
+    totalPrice.dataset.tierField = 'totalPrice';
+    totalPrice.placeholder = '10';
+    totalPrice.value = tier.totalPrice;
+    priceLabel.appendChild(totalPrice);
+    row.appendChild(priceLabel);
+
+    const remove = make('button', 'small-button danger', '删除');
+    remove.type = 'button';
+    remove.dataset.removeTier = String(index);
+    row.appendChild(remove);
+
+    list.appendChild(row);
+  });
+}
+
+const MAX_DISH_IMAGE_CHARS = 85000;
+
+function fileToDishImage(file) {
+  return new Promise((resolve, reject) => {
+    if (!file || !/^image\/(?:jpeg|png|webp)$/.test(file.type || '')) {
+      reject(new Error('请选择 JPG、PNG 或 WebP 图片'));
+      return;
+    }
+
+    if (file.size > 12 * 1024 * 1024) {
+      reject(new Error('原图太大，请选择 12MB 以内的图片'));
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onerror = () => reject(new Error('图片读取失败'));
+
+    reader.onload = () => {
+      const img = new Image();
+      img.onerror = () => reject(new Error('图片格式不支持'));
+
+      img.onload = () => {
+        let maxSide = 720;
+        let quality = 0.76;
+
+        for (let attempt = 0; attempt < 8; attempt += 1) {
+          const scale = Math.min(1, maxSide / Math.max(img.width, img.height));
+          const width = Math.max(1, Math.round(img.width * scale));
+          const height = Math.max(1, Math.round(img.height * scale));
+          const canvas = document.createElement('canvas');
+          canvas.width = width;
+          canvas.height = height;
+
+          const ctx = canvas.getContext('2d');
+          ctx.fillStyle = '#fff8f0';
+          ctx.fillRect(0, 0, width, height);
+          ctx.drawImage(img, 0, 0, width, height);
+
+          const dataUrl = canvas.toDataURL('image/jpeg', quality);
+          if (dataUrl.length <= MAX_DISH_IMAGE_CHARS) {
+            resolve(dataUrl);
+            return;
+          }
+
+          maxSide = Math.max(320, Math.round(maxSide * 0.82));
+          quality = Math.max(0.55, quality - 0.05);
+        }
+
+        reject(new Error('图片压缩后仍然太大，请换一张图片'));
+      };
+
+      img.src = String(reader.result || '');
+    };
+
+    reader.readAsDataURL(file);
+  });
 }
 
 let toastTimer = null;
@@ -159,7 +337,7 @@ async function api(url, options) {
 function showLogin(message) {
   stopPolling();
   state.token = '';
-  sessionStorage.removeItem(TOKEN_KEY);
+  clearSavedAdminToken();
   state.orders = [];
   state.menu = [];
   state.couponTemplates = [];
@@ -218,7 +396,8 @@ async function handleLogin(event) {
     if (!response.ok) throw new Error(data.error || '登录失败');
 
     state.token = data.token;
-    sessionStorage.setItem(TOKEN_KEY, data.token);
+    localStorage.setItem(TOKEN_KEY, data.token);
+    sessionStorage.removeItem(TOKEN_KEY);
     await enterDashboard();
   } catch (err) {
     els.loginError.textContent = err.message || '登录失败';
@@ -709,7 +888,7 @@ function renderOrderDetail() {
 
   const itemHead = make('div', 'detail-item-row head');
   itemHead.appendChild(make('span', null, '菜品'));
-  itemHead.appendChild(make('span', null, '单价 × 数量'));
+  itemHead.appendChild(make('span', null, '计价'));
   itemHead.appendChild(make('span', null, '小计'));
   items.appendChild(itemHead);
 
@@ -720,7 +899,8 @@ function renderOrderDetail() {
       make(
         'span',
         null,
-        money(item.priceCents) + ' × ' + item.count
+        item.priceSummary ||
+          (money(item.priceCents) + ' × ' + item.count)
       )
     );
     row.appendChild(make('span', null, money(item.subtotalCents)));
@@ -852,7 +1032,19 @@ function renderMenu() {
     items.forEach((dish) => {
       const row = make('div', 'admin-dish-row');
 
-      row.appendChild(make('span', 'admin-dish-emoji', dish.emoji || '🍢'));
+      const thumb = make(
+        'span',
+        'admin-dish-emoji' + (dish.imageUrl ? ' admin-dish-photo' : ''),
+        dish.imageUrl ? '' : (dish.emoji || '🍢')
+      );
+      if (dish.imageUrl) {
+        const img = document.createElement('img');
+        img.src = dish.imageUrl;
+        img.alt = dish.name;
+        img.loading = 'lazy';
+        thumb.appendChild(img);
+      }
+      row.appendChild(thumb);
 
       const info = make('div', 'admin-dish-info');
       info.appendChild(make('div', 'admin-dish-name', dish.name));
@@ -860,7 +1052,7 @@ function renderMenu() {
         make(
           'div',
           'admin-dish-meta',
-          money(dish.priceCents) + ' / ' + dish.unit +
+          formatDishPricing(dish) +
           (dish.tag ? ' · ' + dish.tag : '')
         )
       );
@@ -919,6 +1111,13 @@ function renderMenu() {
 
 function openDishForm(dish) {
   state.editingDishId = dish ? dish.id : '';
+  state.dishImageUrl = dish ? dish.imageUrl || '' : '';
+  state.dishTiers = dish && Array.isArray(dish.bundleTiers)
+    ? dish.bundleTiers.map((tier) => ({
+        quantity: String(tier.quantity),
+        totalPrice: centsToInput(tier.totalPriceCents),
+      }))
+    : [];
 
   els.dishFormTitle.textContent = dish ? '编辑菜品' : '新增菜品';
   els.dishId.value = dish ? dish.id : '';
@@ -929,6 +1128,8 @@ function openDishForm(dish) {
   els.dishEmoji.value = dish ? dish.emoji : '🍢';
   els.dishTag.value = dish ? dish.tag || '' : '';
   els.dishDesc.value = dish ? dish.desc || '' : '';
+  setDishImagePreview(state.dishImageUrl);
+  renderDishTiers();
   els.dishSoldOut.checked = dish ? !!dish.soldOut : false;
   els.dishEnabled.checked = dish ? dish.enabled !== false : true;
 
@@ -938,7 +1139,43 @@ function openDishForm(dish) {
 
 function closeDishForm() {
   state.editingDishId = '';
+  state.dishTiers = [];
   els.dishForm.classList.add('hidden');
+}
+
+function readDishTiers(priceCents) {
+  const rows = state.dishTiers.filter(
+    (tier) => String(tier.quantity).trim() || String(tier.totalPrice).trim()
+  );
+  const seen = new Set();
+
+  return rows.map((tier) => {
+    const quantity = Number(tier.quantity);
+    const totalPriceCents = Math.round(Number(tier.totalPrice) * 100);
+
+    if (
+      !Number.isInteger(quantity) ||
+      quantity < 2 ||
+      quantity > 99 ||
+      !(totalPriceCents > 0)
+    ) {
+      throw new Error('请完整填写数量优惠，数量需为 2–99 的整数');
+    }
+
+    if (seen.has(quantity)) {
+      throw new Error('数量优惠中有重复数量');
+    }
+    seen.add(quantity);
+
+    if (totalPriceCents >= priceCents * quantity) {
+      throw new Error(
+        `买 ${quantity} 个的合计金额需低于 ` +
+        compactPrice(priceCents * quantity)
+      );
+    }
+
+    return { quantity, totalPriceCents };
+  });
 }
 
 async function saveDish(event) {
@@ -951,6 +1188,13 @@ async function saveDish(event) {
   if (!name) return showToast('请填写菜品名称');
   if (!category) return showToast('请填写菜品分类');
   if (!(priceCents > 0)) return showToast('价格必须大于 0');
+
+  let bundleTiers = [];
+  try {
+    bundleTiers = readDishTiers(priceCents);
+  } catch (err) {
+    return showToast(err.message || '数量优惠填写不正确');
+  }
 
   const button = els.saveDishBtn;
   button.disabled = true;
@@ -968,6 +1212,8 @@ async function saveDish(event) {
         emoji: els.dishEmoji.value.trim() || '🍢',
         tag: els.dishTag.value.trim(),
         desc: els.dishDesc.value.trim(),
+        imageUrl: state.dishImageUrl,
+        bundleTiers,
         soldOut: els.dishSoldOut.checked,
         enabled: els.dishEnabled.checked,
       }),
@@ -1521,6 +1767,64 @@ function bindEvents() {
   els.addDishBtn.addEventListener('click', () => openDishForm(null));
   els.cancelDishBtn.addEventListener('click', closeDishForm);
   els.dishForm.addEventListener('submit', saveDish);
+  els.addDishTierBtn.addEventListener('click', () => {
+    if (state.dishTiers.length >= 8) {
+      showToast('最多设置 8 档数量优惠');
+      return;
+    }
+
+    state.dishTiers.push({ quantity: '', totalPrice: '' });
+    renderDishTiers();
+
+    const inputs = els.dishTierList.querySelectorAll(
+      '[data-tier-field="quantity"]'
+    );
+    if (inputs.length > 0) inputs[inputs.length - 1].focus();
+  });
+  els.dishUnit.addEventListener('input', renderDishTiers);
+  els.dishTierList.addEventListener('input', (event) => {
+    const field = event.target.dataset.tierField;
+    const row = event.target.closest('[data-tier-index]');
+    if (!field || !row) return;
+
+    const tier = state.dishTiers[Number(row.dataset.tierIndex)];
+    if (!tier) return;
+    tier[field] = event.target.value;
+  });
+  els.dishTierList.addEventListener('click', (event) => {
+    const button = event.target.closest('[data-remove-tier]');
+    if (!button) return;
+
+    state.dishTiers.splice(Number(button.dataset.removeTier), 1);
+    renderDishTiers();
+  });
+  els.chooseDishImageBtn.addEventListener('click', () => {
+    els.dishImageInput.click();
+  });
+  els.removeDishImageBtn.addEventListener('click', () => {
+    state.dishImageUrl = '';
+    els.dishImageInput.value = '';
+    setDishImagePreview('');
+  });
+  els.dishImageInput.addEventListener('change', () => {
+    const file = els.dishImageInput.files && els.dishImageInput.files[0];
+    if (!file) return;
+
+    els.chooseDishImageBtn.disabled = true;
+    els.chooseDishImageBtn.textContent = '处理中...';
+
+    fileToDishImage(file)
+      .then((dataUrl) => {
+        state.dishImageUrl = dataUrl;
+        setDishImagePreview(dataUrl);
+      })
+      .catch((err) => showToast(err.message || '图片处理失败'))
+      .finally(() => {
+        els.dishImageInput.value = '';
+        els.chooseDishImageBtn.disabled = false;
+        els.chooseDishImageBtn.textContent = '选择图片';
+      });
+  });
   els.dishSearchInput.addEventListener('input', () => {
     state.dishQuery = els.dishSearchInput.value.trim();
     renderMenu();

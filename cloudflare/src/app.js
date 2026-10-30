@@ -21,7 +21,8 @@ const ALLOWED_TRANSITIONS = {
   cancelled: [],
 };
 
-const SESSION_TTL_MS = 12 * 60 * 60 * 1000;
+const SESSION_TTL_MS = 30 * 24 * 60 * 60 * 1000;
+const MAX_ADMIN_SESSIONS = 30;
 const LOGIN_MAX_FAILURES = 8;
 const LOGIN_WINDOW_MS = 10 * 60 * 1000;
 const LOGIN_BLOCK_MS = 10 * 60 * 1000;
@@ -34,8 +35,11 @@ const GEOCODE_RATE_WINDOW_MS = 60 * 1000;
 const MAX_ITEMS = 50;
 const MAX_ITEM_COUNT = 99;
 const MAX_AVATAR_LENGTH = 200000;
+const MAX_DISH_IMAGE_LENGTH = 120000;
+const DISH_IMAGE_KEY_PREFIX = 'dish-image:';
+const MAX_BUNDLE_TIERS = 8;
 const MAX_TOKENS_PER_USER = 5;
-const MAX_BODY_LENGTH = 256 * 1024;
+const MAX_BODY_LENGTH = 512 * 1024;
 const SHOP_TZ_OFFSET_MIN = 8 * 60; // 门店按北京时间切分“当天”和取餐号
 
 class HttpError extends Error {
@@ -81,6 +85,172 @@ function cleanText(raw, maxLength) {
     .replace(/\s+/g, ' ')
     .trim()
     .slice(0, maxLength);
+}
+
+function parseDataImage(raw) {
+  const value = String(raw || '').trim();
+  const match = /^data:(image\/(?:jpeg|jpg|png|webp));base64,([A-Za-z0-9+/=]+)$/i.exec(value);
+  if (!match) return null;
+
+  let mime = match[1].toLowerCase();
+  if (mime === 'image/jpg') mime = 'image/jpeg';
+  return { mime, data: match[2] };
+}
+
+function decodeBase64Image(data) {
+  const binary = atob(String(data || ''));
+  const bytes = new Uint8Array(binary.length);
+  for (let i = 0; i < binary.length; i += 1) bytes[i] = binary.charCodeAt(i);
+  return bytes;
+}
+
+function normalizeDishImage(raw) {
+  const value = String(raw || '').trim();
+  if (!value) return '';
+
+  const inline = parseDataImage(value);
+  if (
+    !inline &&
+    !/^https:\/\/[^\s]+$/i.test(value) &&
+    !/^\/api\/menu\/image\/[^/?#\s]+\/[^/?#\s]+$/.test(value)
+  ) {
+    throw new HttpError(400, '菜品图片格式不支持，请重新上传');
+  }
+
+  if (value.length > MAX_DISH_IMAGE_LENGTH) {
+    throw new HttpError(400, '菜品图片太大，请重新上传');
+  }
+
+  return value;
+}
+
+function normalizeBundleTiers(raw, priceCents, strict) {
+  if (!Array.isArray(raw) || raw.length === 0) return [];
+  if (strict && raw.length > MAX_BUNDLE_TIERS) {
+    throw new HttpError(400, `最多设置 ${MAX_BUNDLE_TIERS} 个数量优惠`);
+  }
+
+  const unitPriceCents = Math.round(Number(priceCents) || 0);
+  const tiers = [];
+  const seen = new Set();
+
+  for (const item of raw.slice(0, MAX_BUNDLE_TIERS)) {
+    const source = item && typeof item === 'object' ? item : {};
+    const quantity = Number(source.quantity);
+    const totalPriceCents = Math.round(Number(source.totalPriceCents));
+
+    if (
+      !Number.isInteger(quantity) ||
+      quantity < 2 ||
+      quantity > MAX_ITEM_COUNT ||
+      !Number.isInteger(totalPriceCents) ||
+      totalPriceCents <= 0
+    ) {
+      if (strict) throw new HttpError(400, '数量优惠填写不正确');
+      continue;
+    }
+
+    if (seen.has(quantity)) {
+      if (strict) throw new HttpError(400, '数量优惠中有重复数量');
+      continue;
+    }
+
+    if (unitPriceCents > 0 && totalPriceCents >= unitPriceCents * quantity) {
+      if (strict) {
+        throw new HttpError(
+          400,
+          '数量优惠合计必须低于按基础单价计算的金额'
+        );
+      }
+      continue;
+    }
+
+    seen.add(quantity);
+    tiers.push({ quantity, totalPriceCents });
+  }
+
+  return tiers.sort((a, b) => a.quantity - b.quantity);
+}
+
+function formatCents(cents) {
+  return '¥' + (Math.round(Number(cents) || 0) / 100)
+    .toFixed(2)
+    .replace(/\.00$/, '')
+    .replace(/(\.\d)0$/, '$1');
+}
+
+function calculateDishPricing(dish, count) {
+  const quantity = Math.max(0, Math.floor(Number(count) || 0));
+  const unitPriceCents = Math.round(Number(dish.priceCents) || 0);
+  const tiers = normalizeBundleTiers(dish.bundleTiers, unitPriceCents, false);
+
+  if (quantity === 0 || unitPriceCents <= 0) {
+    return { subtotalCents: 0, priceSummary: '' };
+  }
+
+  const best = new Array(quantity + 1).fill(Infinity);
+  const choices = new Array(quantity + 1).fill(null);
+  best[0] = 0;
+
+  for (let current = 1; current <= quantity; current += 1) {
+    best[current] = best[current - 1] + unitPriceCents;
+    choices[current] = {
+      quantity: 1,
+      totalPriceCents: unitPriceCents,
+    };
+
+    tiers.forEach((tier) => {
+      if (tier.quantity > current) return;
+
+      const candidate =
+        best[current - tier.quantity] + tier.totalPriceCents;
+
+      if (candidate < best[current]) {
+        best[current] = candidate;
+        choices[current] = tier;
+      }
+    });
+  }
+
+  const partCounts = new Map();
+  let remaining = quantity;
+
+  while (remaining > 0) {
+    const part = choices[remaining];
+    if (!part || part.quantity > remaining) break;
+
+    const key = part.quantity + ':' + part.totalPriceCents;
+    const saved = partCounts.get(key) || {
+      quantity: part.quantity,
+      totalPriceCents: part.totalPriceCents,
+      count: 0,
+    };
+    saved.count += 1;
+    partCounts.set(key, saved);
+    remaining -= part.quantity;
+  }
+
+  if (remaining > 0) {
+    partCounts.set('1:' + unitPriceCents, {
+      quantity: 1,
+      totalPriceCents: unitPriceCents,
+      count: remaining,
+    });
+  }
+
+  const priceSummary = Array.from(partCounts.values())
+    .sort((a, b) => b.quantity - a.quantity)
+    .map(
+      (part) =>
+        `${part.quantity * part.count}${dish.unit || '份'} ` +
+        formatCents(part.totalPriceCents * part.count)
+    )
+    .join(' + ');
+
+  return {
+    subtotalCents: best[quantity],
+    priceSummary,
+  };
 }
 
 function yuanToCents(value) {
@@ -132,6 +302,8 @@ function normalizeMenu(rawList, legacyState) {
         priceCents,
         unit: String(raw.unit || '份').trim(),
         tag: String(raw.tag || '').trim(),
+        imageUrl: String(raw.imageUrl || '').trim(),
+        bundleTiers: normalizeBundleTiers(raw.bundleTiers, priceCents, false),
         soldOut: raw.soldOut != null ? !!raw.soldOut : legacySoldOut,
         enabled: raw.enabled !== false,
         sort: Number(raw.sort != null ? raw.sort : index * 10) || 0,
@@ -338,7 +510,7 @@ export function createShop({ store, config }) {
 
   let menuById = new Map(menu.map((dish) => [dish.id, dish]));
 
-  const sessions = new Map();
+  const sessions = loadAdminSessions();
   const loginAttempts = new Map();
   const orderAttempts = new Map();
   const authAttempts = new Map();
@@ -356,6 +528,35 @@ export function createShop({ store, config }) {
   function loadList(name) {
     const value = store.read(name, []);
     return Array.isArray(value) ? value : [];
+  }
+
+  function loadAdminSessions() {
+    const result = new Map();
+    const now = Date.now();
+    const rows = store.read('admin-sessions.json', []);
+
+    if (!Array.isArray(rows)) return result;
+
+    rows.forEach((row) => {
+      const token = String((row && row.token) || '');
+      const expiresAt = Number(row && row.expiresAt);
+      if (token.length >= 32 && Number.isFinite(expiresAt) && expiresAt > now) {
+        result.set(token, expiresAt);
+      }
+    });
+
+    return result;
+  }
+
+  function saveAdminSessions() {
+    const now = Date.now();
+    const rows = Array.from(sessions.entries())
+      .filter(([, expiresAt]) => expiresAt > now)
+      .sort((a, b) => a[1] - b[1])
+      .slice(-MAX_ADMIN_SESSIONS)
+      .map(([token, expiresAt]) => ({ token, expiresAt }));
+
+    store.write('admin-sessions.json', rows);
   }
 
   function loadUsers() {
@@ -417,6 +618,46 @@ export function createShop({ store, config }) {
   function saveMenu() {
     store.write('menu.json', menu);
   }
+
+  function persistDishImage(imageKey, rawImage, version) {
+    const parsed = parseDataImage(rawImage);
+    if (!parsed) return rawImage;
+
+    const imageVersion = String(version || Date.now());
+    store.write(DISH_IMAGE_KEY_PREFIX + imageKey, {
+      version: imageVersion,
+      mime: parsed.mime,
+      data: parsed.data,
+    });
+
+    return (
+      '/api/menu/image/' +
+      encodeURIComponent(imageKey) +
+      '/' +
+      encodeURIComponent(imageVersion)
+    );
+  }
+
+  function migrateInlineDishImages() {
+    let changed = false;
+
+    for (const dish of menu) {
+      if (!parseDataImage(dish.imageUrl)) continue;
+
+      try {
+        dish.imageUrl = persistDishImage(
+          dish.id,
+          dish.imageUrl,
+          dish.updatedAt || Date.now()
+        );
+        changed = true;
+      } catch (err) {
+        console.error('[图片迁移] 失败', dish.id, err);
+      }
+    }
+
+    if (changed) saveMenu();
+  }
   function saveCoupons() {
     store.write('coupons.json', couponTemplates);
   }
@@ -427,6 +668,8 @@ export function createShop({ store, config }) {
   function rebuildMenuIndex() {
     menuById = new Map(menu.map((dish) => [dish.id, dish]));
   }
+
+  migrateInlineDishImages();
 
   // ---------- 菜单 ----------
   function categoriesOfMenu() {
@@ -443,6 +686,10 @@ export function createShop({ store, config }) {
       priceCents: dish.priceCents,
       unit: dish.unit,
       tag: dish.tag,
+      imageUrl: dish.imageUrl || '',
+      bundleTiers: Array.isArray(dish.bundleTiers)
+        ? dish.bundleTiers
+        : [],
       soldOut: !!dish.soldOut,
     };
   }
@@ -590,6 +837,7 @@ export function createShop({ store, config }) {
   function createSession() {
     const token = randomBytesHex(24);
     sessions.set(token, Date.now() + SESSION_TTL_MS);
+    saveAdminSessions();
     return token;
   }
 
@@ -612,6 +860,7 @@ export function createShop({ store, config }) {
     if (!expiresAt) throw new HttpError(401, '请先登录商家后台');
     if (expiresAt < Date.now()) {
       sessions.delete(token);
+      saveAdminSessions();
       throw new HttpError(401, '登录已过期，请重新登录');
     }
   }
@@ -857,7 +1106,8 @@ export function createShop({ store, config }) {
 
     counts.forEach((count, id) => {
       const dish = menuById.get(id);
-      const subtotal = dish.priceCents * count;
+      const pricing = calculateDishPricing(dish, count);
+      const subtotal = pricing.subtotalCents;
       subtotalCents += subtotal;
       itemCount += count;
 
@@ -867,6 +1117,7 @@ export function createShop({ store, config }) {
         priceCents: dish.priceCents,
         unit: dish.unit,
         count,
+        priceSummary: pricing.priceSummary,
         subtotalCents: subtotal,
       });
     });
@@ -960,6 +1211,7 @@ export function createShop({ store, config }) {
       pickupDate: dateKey,
       dailySeq: pickup.dailySeq,
       status: STATUS.PENDING,
+      statusChangedAt: now,
       accountId: user.id,
       accountNickname: user.nickname,
       accountPhone: user.phone,
@@ -1041,6 +1293,8 @@ export function createShop({ store, config }) {
       id: order.id,
       pickupNo: order.pickupNo,
       status: order.status,
+      statusChangedAt:
+        Number(order.statusChangedAt) || Number(order.updatedAt) || 0,
       recipientName: order.recipientName || '',
       phone: order.phone || '',
       address: order.address || '',
@@ -1212,6 +1466,27 @@ export function createShop({ store, config }) {
     autoIssueCoupons(user);
 
     return json({ user: publicUser(user) });
+  }
+
+  function apiMenuImage(req, dishId, version) {
+    const image = store.read(DISH_IMAGE_KEY_PREFIX + dishId, null);
+
+    if (
+      !image ||
+      String(image.version || '') !== String(version) ||
+      typeof image.data !== 'string' ||
+      !/^image\/(?:jpeg|png|webp)$/.test(String(image.mime || ''))
+    ) {
+      throw new HttpError(404, '图片不存在');
+    }
+
+    return new Response(decodeBase64Image(image.data), {
+      headers: securityHeaders({
+        'content-type': image.mime,
+        'cache-control': 'public, max-age=31536000, immutable',
+        etag: '"' + version + '"',
+      }),
+    });
   }
 
   function apiMenu(req) {
@@ -1388,6 +1663,7 @@ export function createShop({ store, config }) {
 
   function apiAdminLogout(req) {
     sessions.delete(getAdminToken(req));
+    saveAdminSessions();
     return json({ success: true });
   }
 
@@ -1417,11 +1693,13 @@ export function createShop({ store, config }) {
 
     const previousStatus = order.status;
     const previousUpdatedAt = order.updatedAt;
+    const previousStatusChangedAt = order.statusChangedAt;
     let userCoupon = null;
     let previousCoupon = null;
 
     order.status = nextStatus;
     order.updatedAt = Date.now();
+    order.statusChangedAt = order.updatedAt;
 
     if (nextStatus === STATUS.CANCELLED) {
       userCoupon = cancelOrderCoupon(order);
@@ -1444,6 +1722,7 @@ export function createShop({ store, config }) {
     } catch (err) {
       order.status = previousStatus;
       order.updatedAt = previousUpdatedAt;
+      order.statusChangedAt = previousStatusChangedAt;
 
       if (userCoupon && previousCoupon) {
         userCoupon.status = previousCoupon.status;
@@ -1479,12 +1758,18 @@ export function createShop({ store, config }) {
     const name = String(body.name || '').trim().slice(0, 30);
     const category = String(body.category || '').trim().slice(0, 20);
     const priceCents = Math.round(Number(body.priceCents));
+    const sourceImageUrl = normalizeDishImage(body.imageUrl);
+    const bundleTiers = normalizeBundleTiers(body.bundleTiers, priceCents, true);
 
     if (!name) throw new HttpError(400, '请填写菜品名称');
     if (!category) throw new HttpError(400, '请填写菜品分类');
     if (!(priceCents > 0)) throw new HttpError(400, '价格必须大于 0');
 
     const now = Date.now();
+    const imageKey = existing ? existing.id : randomId('image_');
+    const imageUrl = sourceImageUrl
+      ? persistDishImage(imageKey, sourceImageUrl, now)
+      : '';
 
     if (existing) {
       existing.name = name;
@@ -1494,6 +1779,8 @@ export function createShop({ store, config }) {
       existing.desc = String(body.desc || '').trim().slice(0, 80);
       existing.emoji = String(body.emoji || existing.emoji || '🍢').trim().slice(0, 8);
       existing.tag = String(body.tag || '').trim().slice(0, 10);
+      existing.imageUrl = imageUrl;
+      existing.bundleTiers = bundleTiers;
       existing.soldOut = body.soldOut != null ? !!body.soldOut : existing.soldOut;
       existing.enabled = body.enabled != null ? !!body.enabled : existing.enabled;
       existing.updatedAt = now;
@@ -1512,6 +1799,8 @@ export function createShop({ store, config }) {
         priceCents,
         unit: String(body.unit || '份').trim().slice(0, 10) || '份',
         tag: String(body.tag || '').trim().slice(0, 10),
+        imageUrl,
+        bundleTiers,
         soldOut: !!body.soldOut,
         enabled: body.enabled !== false,
         sort: maxSort + 10,
@@ -1633,6 +1922,7 @@ export function createShop({ store, config }) {
       users,
       couponTemplates,
       userCoupons,
+      dishImages: store.list(DISH_IMAGE_KEY_PREFIX),
     });
   }
 
@@ -1687,6 +1977,16 @@ export function createShop({ store, config }) {
     if (path === '/api/me' && method === 'GET') return apiMe(req);
     if (path === '/api/auth/profile' && method === 'POST') return apiProfile(req);
     if (path === '/api/menu' && method === 'GET') return apiMenu(req);
+
+    const dishImageMatch = path.match(/^\/api\/menu\/image\/([^/]+)\/([^/]+)$/);
+    if (dishImageMatch && method === 'GET') {
+      return apiMenuImage(
+        req,
+        decodeURIComponent(dishImageMatch[1]),
+        decodeURIComponent(dishImageMatch[2])
+      );
+    }
+
     if (path === '/api/geocode' && method === 'GET') return apiGeocode(req);
     if (path === '/api/coupons' && method === 'GET') return apiCoupons(req);
     if (path === '/api/order' && method === 'POST') return apiCreateOrder(req);

@@ -6,7 +6,42 @@
   <meta name="theme-color" content="#3a2417">
   <meta name="format-detection" content="telephone=no">
   <title>嘎嘎香 乐山油炸串串 · 外卖点单</title>
-  <link rel="stylesheet" href="/style.css?v=20261024-1">
+  <style>
+    *{box-sizing:border-box}html,body{margin:0;padding:0}
+    body{min-height:100vh;background:#efe5da;color:#3a2417;font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;-webkit-text-size-adjust:100%;-webkit-tap-highlight-color:transparent}
+    button,input,textarea{font:inherit}button{cursor:pointer;border:0;background:none;color:inherit}button:disabled{cursor:default}
+    .hidden{display:none!important}
+    .auth-view{display:flex;align-items:center;justify-content:center;min-height:100vh;padding:24px 18px;background:radial-gradient(circle at 50% 0%,rgba(255,122,0,.25),transparent 46%),linear-gradient(160deg,#3a2417,#5a3827 62%,#6e452e)}
+    .auth-card{width:100%;max-width:420px;padding:30px 24px 26px;background:#fff;border-radius:22px;box-shadow:0 22px 60px rgba(0,0,0,.28)}
+    .auth-brand{display:inline-block;padding:4px 10px;font-size:12px;font-weight:700;letter-spacing:2px;color:#fff;background:#ff7a00;border-radius:999px}
+    .auth-card h1{margin:14px 0 0;font-size:26px;line-height:1.25}.auth-card h2{margin:16px 0 0;font-size:22px}
+    .auth-sub{margin:6px 0 0;font-size:14px;color:#a08b78}.auth-hero{margin:22px 0 10px;font-size:64px;line-height:1;text-align:center}
+    .auth-desc{margin:0 0 22px;text-align:center;font-size:14px;color:#6b5848}
+    .auth-hint{margin:14px 0 0;text-align:center;font-size:12px;line-height:1.5;color:#a08b78}.auth-hint.danger{color:#c0392b}
+    .auth-error{min-height:18px;margin:10px 0 0;text-align:center;font-size:13px;line-height:1.4;color:#c0392b}
+    .avatar-preview-wrap{display:flex;flex-direction:column;align-items:center;gap:6px;margin:20px 0 12px}
+    .avatar{display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;overflow:hidden;line-height:1;background:#fff2e5;border-radius:50%}
+    .avatar-xl{width:84px;height:84px;font-size:44px;border:3px solid #ffd8b0}
+    .avatar-presets{display:flex;flex-wrap:wrap;justify-content:center;gap:8px;margin-bottom:6px}
+    .avatar-choice{display:inline-flex;align-items:center;justify-content:center;width:42px;height:42px;font-size:24px;background:#fff8f0;border:2px solid transparent;border-radius:50%}.avatar-choice.active{border-color:#ff7a00;background:#ffe9d2}
+    .text-button{flex-shrink:0;padding:6px 0;font-size:13px;color:#ff7a00}
+    .field{display:block;padding-top:12px}.field-label{display:block;margin-bottom:6px;font-size:13px;color:#6b5848}.field-label em{color:#c0392b;font-style:normal}.field-hint{display:block;margin-top:6px;font-size:11px;line-height:1.5;color:#a08b78}
+    .field input,.field textarea{width:100%;padding:10px 12px;font-size:16px;color:#3a2417;background:#fff8f0;border:1px solid #f0e2d4;border-radius:10px;outline:none}.field input:focus,.field textarea:focus{border-color:#ff7a00}
+    .primary-button{padding:12px 20px;font-size:15px;font-weight:600;border-radius:999px;color:#fff;background:#ff7a00}.primary-button:disabled{opacity:.45}.primary-button.wide{display:block;width:100%;margin-top:16px}
+    .first-visit #authLoginStep{display:none!important}.first-visit #authProfileStep{display:block!important}
+  </style>
+  <link rel="preload" href="/style.css?v=20261029-1" as="style" fetchpriority="high" onload="this.onload=null;this.rel='stylesheet'">
+  <link rel="preload" href="/app.js?v=20261029-1" as="script" fetchpriority="high">
+  <noscript><link rel="stylesheet" href="/style.css?v=20261029-1"></noscript>
+  <script>
+    try {
+      if (!localStorage.getItem('h5_user_token')) {
+        document.documentElement.classList.add('first-visit');
+      }
+    } catch (err) {
+      document.documentElement.classList.add('first-visit');
+    }
+  </script>
 </head>
 <body>
   <!-- 登录 / 首次资料设置 -->
@@ -46,7 +81,7 @@
           <small class="field-hint">用于登录账号、商家联系和优惠券发放，提交后不可修改</small>
         </label>
 
-        <button id="saveProfileBtn" class="primary-button wide" type="button">完成，开始点单</button>
+        <button id="saveProfileBtn" class="primary-button wide" type="button" disabled>正在加载...</button>
         <p id="profileError" class="auth-error" role="alert"></p>
       </div>
     </div>
@@ -65,6 +100,14 @@
         </button>
       </div>
       <div id="storeNotice" class="notice-bar">外卖配送，提交订单后商家会电话联系确认，线下支付</div>
+      <button id="openOrdersQuickBtn" class="orders-quick-entry" type="button">
+        <span class="orders-quick-icon" aria-hidden="true">📋</span>
+        <span class="orders-quick-copy">
+          <strong>我的订单</strong>
+          <small>查看接单、制作进度和历史订单</small>
+        </span>
+        <span class="orders-quick-arrow" aria-hidden="true">›</span>
+      </button>
     </header>
 
     <div class="menu-tools">
@@ -76,7 +119,17 @@
       <section id="recommendationArea" class="recommendation-area hidden" aria-label="推荐菜品"></section>
     </div>
 
-    <nav id="categoryBar" class="category-bar" aria-label="菜品分类"></nav>
+    <div class="category-shell">
+      <button id="categoryOrderStatus" class="category-order-status hidden" type="button">
+        <span class="category-order-icon" aria-hidden="true">📋</span>
+        <span class="category-order-copy">
+          <small>当前订单</small>
+          <strong id="categoryOrderStatusText">待接单</strong>
+        </span>
+        <span id="categoryOrderStatusNo" class="category-order-no">-- ›</span>
+      </button>
+      <nav id="categoryBar" class="category-bar" aria-label="菜品分类"></nav>
+    </div>
 
     <main id="menuList" class="menu-list" aria-live="polite"></main>
     <div id="menuLoading" class="menu-loading">菜单加载中...</div>
@@ -243,8 +296,30 @@
     </div>
   </section>
 
+  <div id="orderNotice" class="order-notice hidden" role="status" aria-live="polite">
+    <span class="order-notice-icon" aria-hidden="true">🔔</span>
+    <span class="order-notice-copy">
+      <strong id="orderNoticeTitle">订单状态更新</strong>
+      <small id="orderNoticeMessage"></small>
+    </span>
+    <button id="orderNoticeOpenBtn" class="order-notice-action" type="button">查看</button>
+    <button id="orderNoticeCloseBtn" class="order-notice-close" type="button" aria-label="关闭订单提醒">×</button>
+  </div>
+
   <div id="toast" class="toast hidden" role="status"></div>
 
-  <script src="/app.js?v=20261024-1"></script>
+  <script>
+    (function () {
+      try {
+        if (!localStorage.getItem('h5_user_token')) {
+          document.getElementById('authLoginStep').classList.add('hidden');
+          document.getElementById('authProfileStep').classList.remove('hidden');
+        }
+      } catch (err) {
+        // 本机存储不可用时继续由 app.js 处理
+      }
+    })();
+  </script>
+  <script src="/app.js?v=20261029-1" fetchpriority="high"></script>
 </body>
 </html>

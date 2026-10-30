@@ -36,8 +36,16 @@ App({
       resolveReady = resolve;
     });
 
+    // cloudInited：只表示「云开发环境已经可用」，不等 login 云函数。
+    // 菜单这类只读请求用它当门闸，首屏就不用排队等登录（登录要跑十几个数据库操作）。
+    let resolveInited;
+    this.globalData.cloudInited = new Promise((resolve) => {
+      resolveInited = resolve;
+    });
+
     // 没有配置云环境（envList 为空）时，直接使用本地存储模式
     if (!wx.cloud || !envList || envList.length === 0) {
+      resolveInited(false);
       resolveReady(false);
       return;
     }
@@ -47,6 +55,10 @@ App({
       env: envList[0],
       traceUser: true,
     });
+
+    // wx.cloud.init 是同步配置，之后就能直接 callFunction，
+    // 所以这里立刻放行，让菜单请求和登录请求并行跑。
+    resolveInited(true);
 
     wx.cloud
       .callFunction({

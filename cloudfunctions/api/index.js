@@ -40,9 +40,26 @@ async function ensureCollections() {
   }
 }
 
+// 部署过一次之后，config/meta 会留下标记。
+// 有标记就只花一次「读一个文档」的时间，不再每次冷启动都试建 7 个集合
+// （每次 createCollection 都要跟数据库往返一趟，冷启动时很贵）。
+async function isSchemaReady() {
+  try {
+    const res = await db.collection('config').doc('meta').get();
+    return !!(res.data && res.data.schemaReady);
+  } catch (e) {
+    return false;
+  }
+}
+
 // 首次部署时准备默认新人券和管理员配置
 async function ensureDefaults() {
   if (defaultsReady) return;
+
+  if (await isSchemaReady()) {
+    defaultsReady = true;
+    return;
+  }
 
   await ensureCollections();
 
@@ -86,6 +103,15 @@ async function ensureDefaults() {
     } catch (e2) {
       // 并发初始化时可能已经被创建
     }
+  }
+
+  // 记下「结构已就绪」，以后冷启动只要读这个文档就够了
+  try {
+    await db.collection('config').doc('meta').set({
+      data: { schemaReady: true, at: Date.now() },
+    });
+  } catch (e) {
+    // 标记写不进也没关系，下次还会走完整的初始化流程
   }
 
   defaultsReady = true;

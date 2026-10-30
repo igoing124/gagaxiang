@@ -6,7 +6,7 @@
   <meta name="theme-color" content="#3a2417">
   <meta name="robots" content="noindex, nofollow">
   <title>商家后台 · 嘎嘎香</title>
-  <link rel="stylesheet" href="/admin.css?v=20261024-1">
+  <link rel="stylesheet" href="/admin.css?v=20261024-3">
 </head>
 <body>
   <!-- 登录 -->
@@ -90,7 +90,7 @@
             <input id="dishCategory" maxlength="20" placeholder="例如 荤菜类" required>
           </label>
           <label class="form-field">
-            <span>价格（元）*</span>
+            <span>基础价（买 1 个，元）*</span>
             <input id="dishPrice" type="number" min="0.01" step="0.01" placeholder="例如 0.7" required>
           </label>
           <label class="form-field">
@@ -105,6 +105,33 @@
             <span>标签</span>
             <input id="dishTag" maxlength="10" placeholder="招牌 / 新品">
           </label>
+        </div>
+
+        <div class="dish-tier-editor">
+          <div class="dish-tier-head">
+            <div>
+              <strong>数量优惠</strong>
+              <small>基础价是买 1 个的价格；可设置“买几个合计多少钱”。</small>
+            </div>
+            <button id="addDishTierBtn" class="text-button" type="button">+ 添加一档</button>
+          </div>
+          <div id="dishTierList" class="dish-tier-list"></div>
+          <p class="dish-tier-example">示例：基础价 4 元 / 个，添加“3 个合计 10 元”，顾客买 6 个会自动按 20 元计算。</p>
+        </div>
+
+        <div class="dish-image-editor">
+          <span class="form-field-label">菜品图片</span>
+          <div class="dish-image-controls">
+            <div id="dishImagePreview" class="dish-image-preview">
+              <span>暂无图片</span>
+            </div>
+            <div class="dish-image-actions">
+              <button id="chooseDishImageBtn" class="ghost-button" type="button">选择图片</button>
+              <button id="removeDishImageBtn" class="text-button danger hidden" type="button">移除图片</button>
+              <input id="dishImageInput" type="file" accept="image/jpeg,image/png,image/webp" hidden>
+              <small class="field-hint">支持 JPG、PNG、WebP，上传时自动压缩</small>
+            </div>
+          </div>
         </div>
 
         <label class="form-field full">
@@ -209,6 +236,6 @@
 
   <div id="toast" class="toast hidden" role="status"></div>
 
-  <script src="/admin.js?v=20261024-1"></script>
+  <script src="/admin.js?v=20261024-4"></script>
 </body>
 </html>

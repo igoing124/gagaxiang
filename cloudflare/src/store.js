@@ -41,6 +41,20 @@ export class DocStore {
       Date.now()
     );
   }
+
+  list(prefix) {
+    const rows = this.sql
+      .exec(
+        'SELECT name, body FROM docs WHERE name LIKE ? ORDER BY name',
+        String(prefix || '') + '%'
+      )
+      .toArray();
+
+    return rows.map((row) => ({
+      name: row.name,
+      value: JSON.parse(row.body),
+    }));
+  }
 }
 
 // 内存版存储，给 Node 测试和本地预览用，接口与 DocStore 相同。
@@ -60,5 +74,15 @@ export class MemoryStore {
 
   write(name, value) {
     this.docs.set(name, JSON.parse(JSON.stringify(value)));
+  }
+
+  list(prefix) {
+    const keyPrefix = String(prefix || '');
+    return Array.from(this.docs.entries())
+      .filter(([name]) => name.startsWith(keyPrefix))
+      .map(([name, value]) => ({
+        name,
+        value: JSON.parse(JSON.stringify(value)),
+      }));
   }
 }

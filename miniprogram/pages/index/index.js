@@ -1,7 +1,14 @@
 // pages/index/index.js —— 点单页
 // 菜单优先从云数据库读取；没配置云开发或云端还没导入时，用本地 goods.js 兜底
 const { roundMoney } = require('../../utils/order.js');
-const { listOrders, listDishes } = require('../../services/cloud.js');
+const { listOrders, listDishes, getInstantDishes } = require('../../services/cloud.js');
+
+// 从菜单里提取分类，顺序按菜品第一次出现的顺序
+function buildCategories(dishes) {
+  return ['全部'].concat(
+    Array.from(new Set(dishes.map((dish) => dish.category).filter(Boolean)))
+  );
+}
 
 Page({
   // data 里的数据可以在 WXML 里用 {{ }} 显示
@@ -18,9 +25,24 @@ Page({
     menuLoading: true, // 菜单正在加载
   },
 
-  // onLoad 只执行一次：先给菜单占个位置
+  // onLoad 只执行一次：先用本机缓存（上次云端菜单 / 内置菜单）把首屏画出来，
+  // 网络请求放到 onShow 里做，进页面不用先看几秒「菜单加载中」。
   onLoad() {
-    this.dishes = [];
+    this.dishes = getInstantDishes();
+
+    const categories = buildCategories(this.dishes);
+    const currentCategory =
+      categories.indexOf(this.data.currentCategory) === -1
+        ? '全部'
+        : this.data.currentCategory;
+
+    this.setData({
+      categories,
+      currentCategory,
+      menuLoading: false,
+    });
+
+    this.refreshCart();
   },
 
   // onShow：页面每次显示都会执行（从详情页返回也会触发）
@@ -41,14 +63,21 @@ Page({
       console.error('菜单加载失败', e);
     }
 
-    this.dishes = Array.isArray(dishes) ? dishes : [];
+    // 网络失败时 listDishes 会返回上一次的菜单，这里兜底不把页面清空
+    const next = Array.isArray(dishes) && dishes.length ? dishes : this.dishes;
+    const changed = JSON.stringify(next) !== JSON.stringify(this.dishes);
 
-    // 从菜单里自动提取分类，顺序按菜品第一次出现的顺序
-    const categories = ['全部'].concat(
-      Array.from(
-        new Set(this.dishes.map((dish) => dish.category).filter(Boolean))
-      )
-    );
+    this.dishes = next;
+
+    // 最近点过是次要内容，放后台刷新，不挡菜单渲染
+    this.refreshRecent();
+
+    if (!changed && !this.data.menuLoading) {
+      // 菜单没变化就不重新 setData，避免从详情页返回时整页重绘
+      return;
+    }
+
+    const categories = buildCategories(this.dishes);
 
     let currentCategory = this.data.currentCategory || '全部';
     if (categories.indexOf(currentCategory) === -1) {
@@ -62,11 +91,17 @@ Page({
     });
 
     this.refreshCart();
-    this.refreshRecent();
   },
 
   // 从历史订单里挑出最近点过的菜品，放在首页顶部推荐
+  // 每次进页面都请求一次订单有点浪费，60 秒内复用上一次结果
   async refreshRecent() {
+    if (Date.now() - (this.recentAt || 0) < 60 * 1000) {
+      return;
+    }
+
+    this.recentAt = Date.now();
+
     let orders = [];
 
     try {

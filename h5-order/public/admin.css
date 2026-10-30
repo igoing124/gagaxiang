@@ -510,6 +510,18 @@ button:disabled {
   border-radius: 9px;
 }
 
+.admin-dish-photo {
+  overflow: hidden;
+  background: #fff8f0;
+}
+
+.admin-dish-photo img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
 .admin-dish-info {
   flex: 1;
   min-width: 0;
@@ -670,6 +682,154 @@ a.ghost-button {
 
 .form-field.full {
   margin-top: 12px;
+}
+
+.dish-tier-editor {
+  margin-top: 14px;
+  padding: 13px;
+  background: #fffaf4;
+  border: 1px solid #f0dfcc;
+  border-radius: 12px;
+}
+
+.dish-tier-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.dish-tier-head strong {
+  display: block;
+  font-size: 13px;
+  color: var(--brown);
+}
+
+.dish-tier-head small {
+  display: block;
+  margin-top: 3px;
+  font-size: 11px;
+  line-height: 1.5;
+  color: var(--muted);
+}
+
+.dish-tier-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.dish-tier-empty {
+  margin: 0;
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.dish-tier-row {
+  display: grid;
+  grid-template-columns: minmax(88px, 1fr) auto minmax(110px, 1fr) auto;
+  align-items: end;
+  gap: 8px;
+  padding: 10px;
+  background: var(--white);
+  border: 1px solid var(--line);
+  border-radius: 9px;
+}
+
+.dish-tier-field {
+  display: block;
+  min-width: 0;
+}
+
+.dish-tier-field span {
+  display: block;
+  margin-bottom: 4px;
+  font-size: 10px;
+  color: var(--muted);
+}
+
+.dish-tier-field input {
+  width: 100%;
+  padding: 7px 8px;
+  font-size: 14px;
+  color: var(--brown);
+  background: #fff8f0;
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  outline: none;
+}
+
+.dish-tier-field input:focus {
+  border-color: var(--orange);
+}
+
+.dish-tier-unit {
+  padding-bottom: 8px;
+  font-size: 12px;
+  color: var(--brown-soft);
+}
+
+.dish-tier-example {
+  margin: 9px 0 0;
+  font-size: 11px;
+  line-height: 1.5;
+  color: var(--brown-soft);
+}
+
+.dish-image-editor {
+  margin-top: 14px;
+  padding-top: 14px;
+  border-top: 1px dashed #f0e2d4;
+}
+
+.form-field-label {
+  display: block;
+  margin-bottom: 8px;
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.dish-image-controls {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.dish-image-preview {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 104px;
+  height: 78px;
+  overflow: hidden;
+  font-size: 12px;
+  color: var(--muted);
+  background: #fff8f0;
+  border: 1px dashed #dfcbb7;
+  border-radius: 12px;
+}
+
+.dish-image-preview img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.dish-image-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.dish-image-actions .field-hint {
+  flex-basis: 100%;
+  margin: 0;
+  font-size: 11px;
+  line-height: 1.5;
+  color: var(--muted);
 }
 
 .form-field > span {
@@ -933,6 +1093,19 @@ a.ghost-button {
 @media (max-width: 680px) {
   .form-grid {
     grid-template-columns: 1fr;
+  }
+
+  .dish-tier-row {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  }
+
+  .dish-tier-unit {
+    display: none;
+  }
+
+  .dish-tier-row .small-button {
+    grid-column: 1 / -1;
+    justify-self: end;
   }
 
   .admin-dish-row {

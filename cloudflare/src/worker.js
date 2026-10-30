@@ -41,7 +41,7 @@ function withStaticHeaders(response, pathname) {
   if (/\.(?:css|js|png|jpe?g|webp|svg|woff2?)$/i.test(pathname)) {
     headers.set('Cache-Control', 'public, max-age=31536000, immutable');
   } else if (/\.html?$/i.test(pathname) || pathname === '/') {
-    headers.set('Cache-Control', 'public, max-age=60, stale-while-revalidate=86400');
+    headers.set('Cache-Control', 'public, max-age=300, stale-while-revalidate=86400');
   }
 
   return next;

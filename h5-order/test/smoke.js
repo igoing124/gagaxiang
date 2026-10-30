@@ -15,6 +15,8 @@ const TEMP_DIR = fs.mkdtempSync(path.join(os.tmpdir(), 'h5-order-delivery-test-'
 const DATA_DIR = path.join(TEMP_DIR, 'data');
 const CONFIG_PATH = path.join(TEMP_DIR, 'config.json');
 const ADMIN_PASSWORD = 'test-pass-delivery';
+const TEST_DISH_IMAGE =
+  'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAusB9Wl6hF0AAAAASUVORK5CYII=';
 
 let currentPort = 0;
 let server = null;
@@ -455,6 +457,8 @@ async function run() {
     { token: adminToken, body: { status: 'making' } }
   );
   assert.strictEqual(result.status, 200);
+  const makingChangedAt = result.data.order.statusChangedAt;
+  assert.ok(makingChangedAt > orderA.statusChangedAt);
 
   result = await request(
     'POST',
@@ -462,6 +466,10 @@ async function run() {
     { token: adminToken, body: { status: 'completed' } }
   );
   assert.strictEqual(result.status, 200);
+  assert.ok(
+    result.data.order.statusChangedAt > makingChangedAt,
+    '完成时应刷新订单状态时间'
+  );
 
   result = await request(
     'GET',
@@ -469,6 +477,11 @@ async function run() {
     { userToken: tokenA }
   );
   assert.strictEqual(result.data.order.status, 'completed');
+  assert.strictEqual(
+    result.data.order.statusChangedAt,
+    result.data.order.updatedAt,
+    '顾客查单应返回状态更新时间'
+  );
 
   // ---------- 取消退券 ----------
   const customerB = await createCustomer('13800000002', '小李', '🥩');
@@ -555,12 +568,14 @@ async function run() {
       emoji: editDish.emoji,
       tag: editDish.tag,
       desc: editDish.desc,
+      imageUrl: TEST_DISH_IMAGE,
       soldOut: false,
       enabled: true,
     },
   });
   assert.strictEqual(result.status, 200);
   assert.strictEqual(result.data.dish.priceCents, 123);
+  assert.strictEqual(result.data.dish.imageUrl, TEST_DISH_IMAGE);
 
   result = await request('GET', '/api/menu');
   assert.strictEqual(
@@ -568,17 +583,23 @@ async function run() {
     123,
     '顾客端应看到改后的价格'
   );
+  assert.strictEqual(
+    result.data.menu.find((d) => d.id === cheap.id).imageUrl,
+    TEST_DISH_IMAGE,
+    '顾客端应看到菜品图片'
+  );
 
   result = await request('POST', '/api/admin/menu', {
     token: adminToken,
     body: {
       name: '测试新菜',
       category: '测试分类',
-      priceCents: 250,
-      unit: '份',
+      priceCents: 400,
+      unit: '个',
       emoji: '🧪',
       tag: '新品',
       desc: '接口测试',
+      bundleTiers: [{ quantity: 3, totalPriceCents: 1000 }],
       soldOut: false,
       enabled: true,
     },
@@ -587,15 +608,57 @@ async function run() {
   const newDish = result.data.dish;
   assert.ok(newDish.id);
 
+  result = await request('POST', '/api/admin/menu', {
+    token: adminToken,
+    body: {
+      id: newDish.id,
+      name: newDish.name,
+      category: newDish.category,
+      priceCents: 400,
+      unit: '个',
+      bundleTiers: [{ quantity: 3, totalPriceCents: 1200 }],
+      soldOut: false,
+      enabled: true,
+    },
+  });
+  assert.strictEqual(result.status, 400, '数量优惠必须低于基础价合计');
+
   result = await request('GET', '/api/menu');
   assert.ok(
     result.data.menu.some((d) => d.id === newDish.id),
     '新增菜品应出现在顾客菜单'
   );
+  assert.deepStrictEqual(
+    result.data.menu.find((d) => d.id === newDish.id).bundleTiers,
+    [{ quantity: 3, totalPriceCents: 1000 }],
+    '顾客端应看到数量优惠'
+  );
   assert.ok(result.data.categories.includes('测试分类'));
 
   const customerC = await createCustomer('13800000003', '小张', '🐼');
   const tokenC = customerC.token;
+
+  result = await request('POST', '/api/order', {
+    userToken: tokenC,
+    body: orderBody({
+      items: [{ id: newDish.id, count: 6 }],
+      phone: '13800000003',
+    }),
+  });
+  assert.strictEqual(result.status, 201);
+  assert.strictEqual(result.data.subtotalCents, 2000, '6 个按两个 3 个优惠计算');
+  assert.strictEqual(result.data.items[0].priceSummary, '6个 ¥20');
+
+  result = await request('POST', '/api/order', {
+    userToken: tokenC,
+    body: orderBody({
+      items: [{ id: newDish.id, count: 1 }],
+      phone: '13800000003',
+    }),
+  });
+  assert.strictEqual(result.status, 201);
+  assert.strictEqual(result.data.subtotalCents, 400, '买 1 个按基础价 4 元');
+  assert.strictEqual(result.data.items[0].priceSummary, '1个 ¥4');
 
   result = await request(
     'POST',
@@ -802,12 +865,17 @@ async function run() {
   assert.ok(!indexHtml.includes('微信登录'), '顾客页不再显示微信登录界面');
   assert.ok(indexHtml.includes('自动定位'), '结算页应有自动定位');
   assert.ok(indexHtml.includes('配送费'), '结算页应显示配送费');
+  assert.ok(indexHtml.includes('openOrdersQuickBtn'), '点单页应有醒目的我的订单入口');
+  assert.ok(indexHtml.includes('orderNotice'), '顾客页应有订单状态消息提示');
+  assert.ok(indexHtml.includes('categoryOrderStatus'), '分类栏应显示当前订单状态');
   assert.ok(!indexHtml.includes('桌号'), '不再有桌号功能');
   assert.ok(!indexHtml.includes('堂食'), '不再有堂食功能');
   assert.ok(adminHtml.includes('商家后台'), '后台页应能打开');
   assert.ok(adminHtml.includes('订单详情'), '后台应有订单详情弹窗');
   assert.ok(adminHtml.includes('顾客手机号'), '优惠券应按手机号发放');
   assert.ok(adminHtml.includes('dishSearchInput'), '后台菜品管理应有搜索栏');
+  assert.ok(adminHtml.includes('dishImageInput'), '后台应能上传菜品图片');
+  assert.ok(adminHtml.includes('dishTierList'), '后台应能设置数量优惠');
   assert.ok(!indexHtml.includes(ADMIN_PASSWORD), '顾客页不能包含口令');
   assert.ok(!adminHtml.includes(ADMIN_PASSWORD), '后台 HTML 不能包含口令');
   assert.ok(!adminJs.includes(ADMIN_PASSWORD), '后台 JS 不能包含口令');

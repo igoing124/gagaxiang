@@ -129,6 +129,60 @@ button:disabled {
   border-radius: 8px;
 }
 
+.orders-quick-entry {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  gap: 10px;
+  margin-top: 10px;
+  padding: 10px 12px;
+  text-align: left;
+  color: var(--brown);
+  background: #fff8f0;
+  border: 1px solid rgba(255, 210, 160, 0.55);
+  border-radius: 12px;
+  box-shadow: 0 5px 16px rgba(28, 14, 6, 0.16);
+}
+
+.orders-quick-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 34px;
+  height: 34px;
+  font-size: 18px;
+  background: #ffe6cb;
+  border-radius: 10px;
+}
+
+.orders-quick-copy {
+  display: flex;
+  flex: 1;
+  min-width: 0;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.orders-quick-copy strong {
+  font-size: 15px;
+}
+
+.orders-quick-copy small {
+  overflow: hidden;
+  font-size: 11px;
+  color: var(--muted);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.orders-quick-arrow {
+  flex-shrink: 0;
+  font-size: 26px;
+  line-height: 1;
+  color: var(--orange);
+}
+
 /* ==================== 登录 ==================== */
 
 .auth-view {
@@ -420,6 +474,17 @@ button:disabled {
   border-radius: 9px;
 }
 
+.rec-emoji.rec-photo {
+  overflow: hidden;
+}
+
+.rec-photo img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
 .rec-info {
   flex: 1;
   min-width: 0;
@@ -439,6 +504,15 @@ button:disabled {
   color: var(--orange-dark);
 }
 
+.rec-tier {
+  margin-top: 2px;
+  overflow: hidden;
+  font-size: 10px;
+  color: var(--brown-soft);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .rec-add {
   display: inline-flex;
   align-items: center;
@@ -455,18 +529,86 @@ button:disabled {
 
 /* ==================== 分类 ==================== */
 
-.category-bar {
+.category-shell {
   position: sticky;
   top: 0;
   z-index: 9;
+  background: rgba(255, 248, 240, 0.97);
+}
+
+.category-order-status {
+  display: flex;
+  align-items: center;
+  width: calc(100% - 24px);
+  gap: 9px;
+  margin: 8px 12px 0;
+  padding: 8px 10px;
+  text-align: left;
+  background: #fff8f0;
+  border: 1px solid #f0e2d4;
+  border-radius: 11px;
+  box-shadow: 0 4px 14px rgba(58, 36, 23, 0.08);
+}
+
+.category-order-status.status-pending {
+  background: #fff4e7;
+  border-color: #ffd2a4;
+}
+
+.category-order-status.status-making {
+  background: #fff9df;
+  border-color: #f5dc83;
+}
+
+.category-order-status.status-delivering {
+  background: #ecfaf1;
+  border-color: #a8dfb9;
+}
+
+.category-order-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 30px;
+  height: 30px;
+  font-size: 16px;
+  background: rgba(255, 255, 255, 0.72);
+  border-radius: 8px;
+}
+
+.category-order-copy {
+  display: flex;
+  flex: 1;
+  min-width: 0;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.category-order-copy small {
+  font-size: 10px;
+  color: var(--muted);
+}
+
+.category-order-copy strong {
+  font-size: 13px;
+  color: var(--brown);
+}
+
+.category-order-no {
+  flex-shrink: 0;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--orange-dark);
+}
+
+.category-bar {
   display: flex;
   gap: 8px;
   padding: 10px 12px;
   overflow-x: auto;
   background: rgba(255, 248, 240, 0.96);
   border-bottom: 1px solid var(--line);
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
 }
 
 .category-chip {
@@ -541,6 +683,13 @@ button:disabled {
   line-height: 1;
 }
 
+.dish-photo {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
 .sold-out-mask {
   position: absolute;
   inset: 0;
@@ -602,6 +751,25 @@ button:disabled {
   font-weight: 700;
   color: var(--orange-dark);
   white-space: nowrap;
+}
+
+.dish-price-box {
+  min-width: 0;
+}
+
+.dish-tier-hint {
+  width: fit-content;
+  max-width: 100%;
+  margin-top: 3px;
+  padding: 1px 5px;
+  overflow: hidden;
+  font-size: 9px;
+  line-height: 1.35;
+  color: #b45309;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  background: #fff2dd;
+  border-radius: 4px;
 }
 
 .dish-unit {
@@ -815,6 +983,13 @@ button:disabled {
   color: var(--muted);
 }
 
+.cart-row-subtotal {
+  margin-top: 3px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--orange-dark);
+}
+
 .empty-text {
   padding: 28px 0;
   text-align: center;
@@ -902,8 +1077,6 @@ button:disabled {
   padding: 12px 14px;
   background: rgba(255, 248, 240, 0.97);
   border-bottom: 1px solid var(--line);
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
 }
 
 .view-header h2 {
@@ -1362,6 +1535,90 @@ button:disabled {
 }
 
 /* ==================== 提示 ==================== */
+
+.order-notice {
+  position: fixed;
+  top: max(12px, env(safe-area-inset-top));
+  left: 50%;
+  z-index: 200;
+  display: flex;
+  align-items: center;
+  width: calc(100% - 24px);
+  max-width: 456px;
+  gap: 9px;
+  padding: 11px 12px;
+  color: var(--brown);
+  background: #fffaf4;
+  border: 1px solid #ffd7ad;
+  border-radius: 14px;
+  box-shadow: 0 12px 32px rgba(58, 36, 23, 0.22);
+  transform: translateX(-50%);
+  animation: order-notice-in 0.24s ease-out;
+}
+
+.order-notice-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 34px;
+  height: 34px;
+  font-size: 18px;
+  background: #ffe6c7;
+  border-radius: 10px;
+}
+
+.order-notice-copy {
+  display: flex;
+  flex: 1;
+  min-width: 0;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.order-notice-copy strong {
+  overflow: hidden;
+  font-size: 14px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.order-notice-copy small {
+  overflow: hidden;
+  font-size: 12px;
+  color: var(--brown-soft);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.order-notice-action {
+  flex-shrink: 0;
+  padding: 6px 10px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--white);
+  background: var(--orange);
+  border-radius: 999px;
+}
+
+.order-notice-close {
+  flex-shrink: 0;
+  padding: 0 2px;
+  font-size: 22px;
+  line-height: 1;
+  color: var(--muted);
+}
+
+@keyframes order-notice-in {
+  from {
+    opacity: 0;
+    transform: translate(-50%, -12px);
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, 0);
+  }
+}
 
 .toast {
   position: fixed;

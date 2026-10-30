@@ -7,6 +7,8 @@
 .workbuddy/
 .tmp-claude-zh/
 .wrangler/
+.tcb-cli/
+.tcb-config/
 .dev.vars
 商家后台登录信息.txt
 node_modules/

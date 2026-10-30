@@ -4,6 +4,8 @@ import { MemoryStore } from '../src/store.js';
 
 const ADMIN_PASSWORD = 'test-pass-delivery';
 const ADDRESS = '四川省乐山市市中区张公桥好吃街 88 号 3 栋 2 单元 501';
+const TEST_DISH_IMAGE =
+  'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAusB9Wl6hF0AAAAASUVORK5CYII=';
 
 const config = readConfig({
   ADMIN_PASSWORD,
@@ -73,6 +75,41 @@ async function test(name, fn) {
 }
 
 console.log('Cloudflare 版本地测试');
+
+await test('existing Base64 menu images are migrated', async () => {
+  const store = new MemoryStore({
+    'menu.json': [
+      {
+        id: 'legacy-image',
+        emoji: 'x',
+        name: 'Legacy',
+        category: 'Test',
+        priceCents: 100,
+        imageUrl: TEST_DISH_IMAGE,
+        enabled: true,
+        sort: 0,
+      },
+    ],
+  });
+  const shop = newShop(store);
+  const menu = await call(shop, 'GET', '/api/menu');
+  const dish = menu.data.menu.find((item) => item.id === 'legacy-image');
+
+  assert.match(dish.imageUrl, /^\/api\/menu\/image\/legacy-image\/\d+$/);
+  assert.ok(!JSON.stringify(menu.data.menu).includes('data:image/'));
+
+  const image = await call(shop, 'GET', dish.imageUrl);
+  assert.equal(image.status, 200);
+
+  const admin = await call(shop, 'POST', '/api/admin/login', {
+    body: { password: ADMIN_PASSWORD },
+  });
+  const backup = await call(shop, 'GET', '/api/admin/export', {
+    adminToken: admin.data.token,
+  });
+  assert.equal(backup.data.dishImages.length, 1);
+  assert.equal(backup.data.dishImages[0].name, 'dish-image:legacy-image');
+});
 
 await test('菜单、分类和门店配置', async () => {
   const shop = newShop();
@@ -268,6 +305,16 @@ await test('商家登录、接单、完成和取消退券', async () => {
   );
   assert.equal(making.status, 200);
   assert.equal(making.data.order.status, 'making');
+  const makingChangedAt = making.data.order.statusChangedAt;
+  assert.ok(makingChangedAt >= order.data.statusChangedAt);
+
+  const customerMaking = await call(
+    shop,
+    'GET',
+    `/api/order/${order.data.id}?token=${order.data.token}`
+  );
+  assert.equal(customerMaking.data.order.status, 'making');
+  assert.equal(customerMaking.data.order.statusChangedAt, makingChangedAt);
 
   const invalid = await call(
     shop,
@@ -293,6 +340,33 @@ await test('商家登录、接单、完成和取消退券', async () => {
   assert.equal(noAuth.status, 401);
 });
 
+await test('商家登录状态在 Worker 重启后仍然有效', async () => {
+  const store = new MemoryStore();
+  const first = newShop(store);
+  const admin = await call(first, 'POST', '/api/admin/login', {
+    body: { password: ADMIN_PASSWORD },
+  });
+  assert.equal(admin.status, 200);
+  assert.ok(admin.data.token);
+  assert.ok(admin.data.expiresAt - Date.now() > 20 * 24 * 60 * 60 * 1000);
+
+  const restarted = newShop(store);
+  const list = await call(restarted, 'GET', '/api/admin/orders', {
+    adminToken: admin.data.token,
+  });
+  assert.equal(list.status, 200);
+
+  const logout = await call(restarted, 'POST', '/api/admin/logout', {
+    adminToken: admin.data.token,
+  });
+  assert.equal(logout.status, 200);
+
+  const afterLogout = await call(restarted, 'GET', '/api/admin/orders', {
+    adminToken: admin.data.token,
+  });
+  assert.equal(afterLogout.status, 401);
+});
+
 await test('商家改价、售罄和下架', async () => {
   const shop = newShop();
   const admin = await call(shop, 'POST', '/api/admin/login', {
@@ -315,10 +389,62 @@ await test('商家改价、售罄和下架', async () => {
       desc: dish.desc,
       emoji: dish.emoji,
       tag: dish.tag,
+      imageUrl: TEST_DISH_IMAGE,
+      bundleTiers: [{ quantity: 3, totalPriceCents: 2400 }],
     },
   });
   assert.equal(saved.status, 200);
   assert.equal(saved.data.dish.priceCents, 999);
+  assert.match(saved.data.dish.imageUrl, /^\/api\/menu\/image\/wo_sun\/\d+$/);
+  assert.deepEqual(
+    saved.data.dish.bundleTiers,
+    [{ quantity: 3, totalPriceCents: 2400 }]
+  );
+
+  const publicMenu = await call(shop, 'GET', '/api/menu');
+  const publicDish = publicMenu.data.menu.find((item) => item.id === 'wo_sun');
+  assert.equal(publicDish.imageUrl, saved.data.dish.imageUrl);
+
+  const image = await call(shop, 'GET', saved.data.dish.imageUrl);
+  assert.equal(image.status, 200);
+  assert.equal(
+    image.headers.get('cache-control'),
+    'public, max-age=31536000, immutable'
+  );
+  assert.deepEqual(
+    publicMenu.data.menu.find((item) => item.id === 'wo_sun').bundleTiers,
+    [{ quantity: 3, totalPriceCents: 2400 }]
+  );
+
+  const invalidTier = await call(shop, 'POST', '/api/admin/menu', {
+    adminToken,
+    body: {
+      id: 'wo_sun',
+      name: dish.name,
+      category: dish.category,
+      priceCents: 999,
+      unit: dish.unit,
+      desc: dish.desc,
+      emoji: dish.emoji,
+      tag: dish.tag,
+      bundleTiers: [{ quantity: 3, totalPriceCents: 2997 }],
+    },
+  });
+  assert.equal(invalidTier.status, 400);
+
+  const tierCustomer = await login(shop, '13800000016');
+  const tierOrder = await call(shop, 'POST', '/api/order', {
+    userToken: tierCustomer.token,
+    body: {
+      items: [{ id: 'wo_sun', count: 6 }],
+      recipientName: '阶梯价顾客',
+      phone: '13800000016',
+      address: ADDRESS,
+    },
+  });
+  assert.equal(tierOrder.status, 201);
+  assert.equal(tierOrder.data.subtotalCents, 4800);
+  assert.equal(tierOrder.data.items[0].priceSummary, '6串 ¥48');
 
   const soldOut = await call(shop, 'POST', '/api/admin/menu/wo_sun/status', {
     adminToken,
@@ -519,6 +645,7 @@ await test('商家导出备份', async () => {
   assert.ok(Array.isArray(res.data.orders));
   assert.ok(Array.isArray(res.data.users));
   assert.ok(Array.isArray(res.data.couponTemplates));
+  assert.ok(Array.isArray(res.data.dishImages));
 
   const noAuth = await call(shop, 'GET', '/api/admin/export');
   assert.equal(noAuth.status, 401);

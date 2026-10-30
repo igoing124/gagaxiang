@@ -8,7 +8,10 @@ const STORAGE_CART = 'h5_order_cart_v1';
 const STORAGE_USER_TOKEN = 'h5_user_token';
 const STORAGE_MENU_CACHE = 'h5_order_menu_cache_v1';
 const POLL_INTERVAL = 10000;
-const MENU_REFRESH_INTERVAL = 15000;
+const ORDER_MONITOR_INTERVAL = 10000;
+// 菜单刷新间隔：跨境线路下每 15 秒拉一次整份菜单太浪费，
+// 而且会和下单请求抢带宽，改成 60 秒。
+const MENU_REFRESH_INTERVAL = 60000;
 
 const STATUS_TEXT = {
   pending: '待接单',
@@ -32,6 +35,12 @@ const state = {
   history: [],
   pollTimer: null,
   menuTimer: null,
+  orderMonitorTimer: null,
+  knownOrderStatuses: new Map(),
+  notifiedOrderStatuses: new Set(),
+  statusSnapshotReady: false,
+  noticeOrderId: '',
+  noticeHideTimer: null,
   submitting: false,
   loadingMenu: false,
   loadingMenuPromise: null,
@@ -58,8 +67,10 @@ function cacheElements() {
     'avatarFileInput', 'avatarPresets', 'nicknameInput', 'authPhoneInput',
     'saveProfileBtn', 'profileError', 'phoneFrame', 'storeName',
     'storeHours', 'storeNotice', 'menuSearchInput', 'clearMenuSearchBtn',
-    'recommendationArea', 'openOrdersBtn', 'headerAvatar',
-    'headerNickname', 'categoryBar', 'menuList', 'menuLoading',
+    'recommendationArea', 'openOrdersBtn', 'openOrdersQuickBtn',
+    'headerAvatar', 'headerNickname', 'categoryOrderStatus',
+    'categoryOrderStatusText', 'categoryOrderStatusNo',
+    'categoryBar', 'menuList', 'menuLoading',
     'cartSummaryBtn', 'cartBadge', 'cartTotal', 'checkoutBtn',
     'cartOverlay', 'cartItemList', 'sheetTotal', 'clearCartBtn',
     'sheetCheckoutBtn', 'closeCartBtn', 'checkoutView', 'checkoutBackBtn',
@@ -73,6 +84,8 @@ function cacheElements() {
     'successDiscountRow', 'successDiscount', 'successTotal',
     'continueOrderBtn', 'successMyOrdersBtn', 'ordersView', 'ordersBackBtn',
     'profileAvatar', 'profileNickname', 'profilePhone', 'ordersList',
+    'orderNotice', 'orderNoticeTitle', 'orderNoticeMessage',
+    'orderNoticeOpenBtn', 'orderNoticeCloseBtn',
     'toast',
   ].forEach((id) => {
     els[id] = $(id);
@@ -105,22 +118,41 @@ function clearToken() {
   }
 }
 
-async function api(url, options) {
-  const opts = options || {};
-  const headers = Object.assign(
-    { 'Content-Type': 'application/json' },
-    opts.headers || {}
-  );
-  const token = getToken();
+const API_TIMEOUT_MS = 8000;
 
-  if (token) headers['x-user-token'] = token;
+function sleep(ms) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
 
-  const response = await fetch(url, {
-    method: opts.method || 'GET',
-    headers,
-    body: opts.body,
-    cache: 'no-store',
-  });
+// 发一次请求；超时用 AbortController 掐断，不让页面无限期转圈。
+async function sendRequest(url, opts) {
+  const controller =
+    typeof AbortController === 'function' ? new AbortController() : null;
+  const timeoutMs =
+    Number(opts.timeout) > 0 ? Number(opts.timeout) : API_TIMEOUT_MS;
+  const timer = controller
+    ? setTimeout(() => controller.abort(), timeoutMs)
+    : null;
+
+  let response;
+
+  try {
+    response = await fetch(url, {
+      method: opts.method,
+      headers: opts.headers,
+      body: opts.body,
+      cache: 'no-store',
+      signal: controller ? controller.signal : undefined,
+    });
+  } catch (err) {
+    // 跨境线路偶尔会直接卡住，这里统一成可读的提示
+    if (err && err.name === 'AbortError') {
+      throw new Error('网络有点慢，请重试');
+    }
+    throw new Error('网络连接失败，请检查网络后重试');
+  } finally {
+    if (timer) clearTimeout(timer);
+  }
 
   let data = {};
   try {
@@ -143,9 +175,151 @@ async function api(url, options) {
   return data;
 }
 
+async function api(url, options) {
+  const opts = options || {};
+  const method = String(opts.method || 'GET').toUpperCase();
+  const headers = Object.assign(
+    { 'Content-Type': 'application/json' },
+    opts.headers || {}
+  );
+  const token = getToken();
+
+  if (token) headers['x-user-token'] = token;
+
+  // 读接口超时/断网时自动重试一次：首屏少一次「白等」
+  const maxAttempts = method === 'GET' && opts.retry !== false ? 2 : 1;
+  let lastError = null;
+
+  for (let attempt = 0; attempt < maxAttempts; attempt += 1) {
+    try {
+      return await sendRequest(url, {
+        method,
+        headers,
+        body: opts.body,
+        timeout: opts.timeout,
+        skipAuthRedirect: opts.skipAuthRedirect,
+      });
+    } catch (err) {
+      lastError = err;
+
+      // 只有网络层失败才重试；服务端明确返回 4xx/5xx 就别重试了
+      const retryable = !err.status;
+
+      if (attempt + 1 < maxAttempts && retryable) {
+        await sleep(500);
+        continue;
+      }
+
+      throw err;
+    }
+  }
+
+  throw lastError;
+}
+
 function money(cents) {
   const n = Math.round(Number(cents) || 0);
   return '¥' + (n / 100).toFixed(2);
+}
+
+function compactMoney(cents) {
+  return money(cents).replace(/\.00$/, '').replace(/(\.\d)0$/, '$1');
+}
+
+function dishBundleTiers(dish) {
+  const unitPriceCents = Math.round(Number(dish && dish.priceCents) || 0);
+
+  return (Array.isArray(dish && dish.bundleTiers) ? dish.bundleTiers : [])
+    .map((tier) => ({
+      quantity: Math.floor(Number(tier && tier.quantity) || 0),
+      totalPriceCents: Math.round(
+        Number(tier && tier.totalPriceCents) || 0
+      ),
+    }))
+    .filter(
+      (tier) =>
+        tier.quantity >= 2 &&
+        tier.quantity <= 99 &&
+        tier.totalPriceCents > 0 &&
+        tier.totalPriceCents < unitPriceCents * tier.quantity
+    )
+    .sort((a, b) => a.quantity - b.quantity);
+}
+
+function calculateDishPrice(dish, count) {
+  const quantity = Math.max(0, Math.floor(Number(count) || 0));
+  const unitPriceCents = Math.round(Number(dish && dish.priceCents) || 0);
+  const tiers = dishBundleTiers(dish);
+
+  if (quantity === 0 || unitPriceCents <= 0) {
+    return { subtotalCents: 0, priceSummary: '' };
+  }
+
+  const best = new Array(quantity + 1).fill(Infinity);
+  const choices = new Array(quantity + 1).fill(null);
+  best[0] = 0;
+
+  for (let current = 1; current <= quantity; current += 1) {
+    best[current] = best[current - 1] + unitPriceCents;
+    choices[current] = {
+      quantity: 1,
+      totalPriceCents: unitPriceCents,
+    };
+
+    tiers.forEach((tier) => {
+      if (tier.quantity > current) return;
+
+      const candidate =
+        best[current - tier.quantity] + tier.totalPriceCents;
+
+      if (candidate < best[current]) {
+        best[current] = candidate;
+        choices[current] = tier;
+      }
+    });
+  }
+
+  const parts = new Map();
+  let remaining = quantity;
+
+  while (remaining > 0) {
+    const part = choices[remaining];
+    if (!part || part.quantity > remaining) break;
+
+    const key = part.quantity + ':' + part.totalPriceCents;
+    const saved = parts.get(key) || {
+      quantity: part.quantity,
+      totalPriceCents: part.totalPriceCents,
+      count: 0,
+    };
+    saved.count += 1;
+    parts.set(key, saved);
+    remaining -= part.quantity;
+  }
+
+  const priceSummary = Array.from(parts.values())
+    .sort((a, b) => b.quantity - a.quantity)
+    .map(
+      (part) =>
+        `${part.quantity * part.count}${dish.unit || '份'} ` +
+        compactMoney(part.totalPriceCents * part.count)
+    )
+    .join(' + ');
+
+  return {
+    subtotalCents: best[quantity],
+    priceSummary,
+  };
+}
+
+function dishOfferText(dish) {
+  return dishBundleTiers(dish)
+    .map(
+      (tier) =>
+        `${tier.quantity}${dish.unit || '份'} ` +
+        compactMoney(tier.totalPriceCents)
+    )
+    .join(' · ');
 }
 
 function formatTime(timestamp) {
@@ -183,6 +357,139 @@ function isTerminal(status) {
 
 function statusText(status) {
   return STATUS_TEXT[status] || '处理中';
+}
+
+function orderStatusMessage(order) {
+  const status = order && order.status;
+
+  if (status === 'making') {
+    return '商家已接单，正在为你制作';
+  }
+  if (status === 'completed') {
+    return '餐品已制作完成，请留意配送/取餐';
+  }
+  if (status === 'cancelled') {
+    return '订单已取消，如有疑问请联系商家';
+  }
+  return '';
+}
+
+function hideOrderNotice() {
+  if (state.noticeHideTimer) {
+    clearTimeout(state.noticeHideTimer);
+    state.noticeHideTimer = null;
+  }
+  if (els.orderNotice) els.orderNotice.classList.add('hidden');
+}
+
+function showOrderNotice(order) {
+  const message = orderStatusMessage(order);
+  if (!message || !els.orderNotice) return;
+
+  const title =
+    order.status === 'making'
+      ? '商家已接单'
+      : order.status === 'completed'
+        ? '制作完成'
+        : '订单状态更新';
+
+  state.noticeOrderId = order.id;
+  els.orderNoticeTitle.textContent =
+    title + (order.pickupNo ? ' · ' + order.pickupNo : '');
+  els.orderNoticeMessage.textContent = message;
+  els.orderNotice.classList.remove('hidden');
+
+  if (state.noticeHideTimer) clearTimeout(state.noticeHideTimer);
+  state.noticeHideTimer = setTimeout(hideOrderNotice, 15000);
+}
+
+function requestOrderNotificationPermission() {
+  if (
+    !('Notification' in window) ||
+    Notification.permission !== 'default'
+  ) {
+    return;
+  }
+
+  try {
+    const pending = Notification.requestPermission();
+    if (pending && typeof pending.catch === 'function') {
+      pending.catch(() => {});
+    }
+  } catch (err) {
+    // 某些微信内置浏览器会暴露接口但不允许申请
+  }
+}
+
+function notifyOrderStatus(order) {
+  const message = orderStatusMessage(order);
+  if (!message) return;
+
+  const key = order.id + ':' + order.status;
+  if (state.notifiedOrderStatuses.has(key)) return;
+  state.notifiedOrderStatuses.add(key);
+
+  showOrderNotice(order);
+  showToast(message);
+
+  if (navigator.vibrate) {
+    try {
+      navigator.vibrate([180, 80, 180]);
+    } catch (err) {
+      // 部分浏览器不支持震动
+    }
+  }
+
+  if ('Notification' in window && Notification.permission === 'granted') {
+    try {
+      const notice = new Notification(
+        order.status === 'making' ? '商家已接单' : '餐品制作完成',
+        {
+          body:
+            (order.pickupNo ? '订单 ' + order.pickupNo + '：' : '') +
+            message,
+          tag: 'gagaxiang-order-' + order.id,
+          renotify: true,
+        }
+      );
+
+      notice.onclick = () => {
+        window.focus();
+        openOrderById(order.id, 'orders');
+        notice.close();
+      };
+    } catch (err) {
+      // 系统通知不可用时仍有页面提醒
+    }
+  }
+}
+
+function rememberOrderStatus(order) {
+  if (!order || !order.id || !order.status) return;
+  state.knownOrderStatuses.set(order.id, order.status);
+  state.statusSnapshotReady = true;
+}
+
+function recordOrderStatuses(orders, notifyChanges) {
+  if (!Array.isArray(orders)) return;
+
+  orders.forEach((order) => {
+    if (!order || !order.id || !order.status) return;
+
+    const previous = state.knownOrderStatuses.get(order.id);
+    if (
+      notifyChanges &&
+      state.statusSnapshotReady &&
+      previous &&
+      previous !== order.status
+    ) {
+      notifyOrderStatus(order);
+    }
+
+    state.knownOrderStatuses.set(order.id, order.status);
+  });
+
+  state.statusSnapshotReady = true;
 }
 
 function updateBodyLock() {
@@ -382,6 +689,23 @@ async function autoLogin(fallbackMessage) {
   }
 }
 
+async function ensureGuestSession() {
+  if (getToken()) return;
+
+  const data = await api('/api/auth/login', {
+    method: 'POST',
+    body: JSON.stringify({ localOnly: true }),
+    skipAuthRedirect: true,
+  });
+
+  if (!data.token || !data.user) {
+    throw new Error('进入失败，请重试');
+  }
+
+  setToken(data.token);
+  state.user = data.user;
+}
+
 async function saveProfile() {
   const nickname = els.nicknameInput.value.trim();
   const phone = els.authPhoneInput.value.trim();
@@ -410,6 +734,8 @@ async function saveProfile() {
   button.textContent = '保存中...';
 
   try {
+    await ensureGuestSession();
+
     const data = await api('/api/auth/profile', {
       method: 'POST',
       body: JSON.stringify({
@@ -526,6 +852,7 @@ function handleSessionExpired() {
   clearToken();
   state.user = null;
   stopPolling();
+  stopOrderMonitor();
   els.phoneFrame.classList.add('hidden');
   els.cartOverlay.classList.add('hidden');
   els.checkoutView.classList.add('hidden');
@@ -672,6 +999,47 @@ function renderCategories() {
   });
 }
 
+function renderCategoryOrderStatus() {
+  if (!els.categoryOrderStatus) return;
+
+  const byId = new Map(
+    (state.history || []).map((order) => [order.id, order])
+  );
+  if (state.currentOrder && state.currentOrder.id) {
+    byId.set(state.currentOrder.id, state.currentOrder);
+  }
+
+  const activeOrder = Array.from(byId.values())
+    .filter(
+      (order) =>
+        order &&
+        (order.status === 'pending' ||
+          order.status === 'making' ||
+          order.status === 'delivering')
+    )
+    .sort((a, b) => Number(b.createdAt || 0) - Number(a.createdAt || 0))[0];
+
+  if (!activeOrder) {
+    els.categoryOrderStatus.classList.add('hidden');
+    els.categoryOrderStatus.dataset.orderId = '';
+    return;
+  }
+
+  const labels = {
+    pending: '待商家接单',
+    making: '商家制作中',
+    delivering: '配送中',
+  };
+
+  els.categoryOrderStatus.dataset.orderId = activeOrder.id;
+  els.categoryOrderStatus.className =
+    'category-order-status status-' + activeOrder.status;
+  els.categoryOrderStatusText.textContent =
+    labels[activeOrder.status] || statusText(activeOrder.status);
+  els.categoryOrderStatusNo.textContent =
+    (activeOrder.pickupNo || '查看') + ' ›';
+}
+
 function updateSearchUI() {
   const searching = !!state.menuQuery;
 
@@ -753,7 +1121,17 @@ function renderRecommendationBlock(title, icon, dishes) {
 
   dishes.forEach((dish) => {
     const card = make('article', 'rec-card');
-    card.appendChild(make('span', 'rec-emoji', dish.emoji || '🍢'));
+    const visual = make('span', 'rec-emoji' + (dish.imageUrl ? ' rec-photo' : ''));
+    if (dish.imageUrl) {
+      const img = document.createElement('img');
+      img.src = dish.imageUrl;
+      img.alt = dish.name;
+      img.loading = 'lazy';
+      visual.appendChild(img);
+    } else {
+      visual.textContent = dish.emoji || '🍢';
+    }
+    card.appendChild(visual);
 
     const info = make('div', 'rec-info');
     info.appendChild(make('div', 'rec-name', dish.name));
@@ -761,9 +1139,12 @@ function renderRecommendationBlock(title, icon, dishes) {
       make(
         'div',
         'rec-price',
-        money(dish.priceCents) + '/' + dish.unit
+        compactMoney(dish.priceCents) + '/' + dish.unit
       )
     );
+    if (dishOfferText(dish)) {
+      info.appendChild(make('div', 'rec-tier', dishOfferText(dish)));
+    }
     card.appendChild(info);
 
     const add = make('button', 'rec-add', '+');
@@ -815,7 +1196,16 @@ function renderMenu() {
     card.dataset.dishId = dish.id;
 
     const emojiWrap = make('div', 'dish-emoji-wrap');
-    emojiWrap.appendChild(make('span', 'dish-emoji', dish.emoji || '🍢'));
+    if (dish.imageUrl) {
+      const img = document.createElement('img');
+      img.className = 'dish-photo';
+      img.src = dish.imageUrl;
+      img.alt = dish.name;
+      img.loading = 'lazy';
+      emojiWrap.appendChild(img);
+    } else {
+      emojiWrap.appendChild(make('span', 'dish-emoji', dish.emoji || '🍢'));
+    }
     if (dish.soldOut) {
       emojiWrap.appendChild(make('span', 'sold-out-mask', '售罄'));
     }
@@ -831,9 +1221,14 @@ function renderMenu() {
     }
 
     const bottom = make('div', 'dish-bottom');
-    const price = make('div', 'dish-price', money(dish.priceCents));
+    const priceBox = make('div', 'dish-price-box');
+    const price = make('div', 'dish-price', compactMoney(dish.priceCents));
     price.appendChild(make('span', 'dish-unit', '/' + dish.unit));
-    bottom.appendChild(price);
+    priceBox.appendChild(price);
+    if (dishOfferText(dish)) {
+      priceBox.appendChild(make('div', 'dish-tier-hint', dishOfferText(dish)));
+    }
+    bottom.appendChild(priceBox);
 
     const stepper = make('div', 'stepper');
 
@@ -907,7 +1302,7 @@ function cartTotals() {
 
     const itemCount = state.cart[id] || 0;
     count += itemCount;
-    totalCents += dish.priceCents * itemCount;
+    totalCents += calculateDishPrice(dish, itemCount).subtotalCents;
   });
 
   return { count, totalCents };
@@ -995,7 +1390,20 @@ function renderCartSheet() {
     const info = make('div', 'cart-row-info');
     info.appendChild(make('div', 'cart-row-name', dish.emoji + ' ' + dish.name));
     info.appendChild(
-      make('div', 'cart-row-price', money(dish.priceCents) + ' / ' + dish.unit)
+      make(
+        'div',
+        'cart-row-price',
+        compactMoney(dish.priceCents) + ' / ' + dish.unit +
+        (dishOfferText(dish) ? ' · ' + dishOfferText(dish) : '')
+      )
+    );
+    const pricing = calculateDishPrice(dish, count);
+    info.appendChild(
+      make(
+        'div',
+        'cart-row-subtotal',
+        `${count}${dish.unit || '份'}合计 ${money(pricing.subtotalCents)}`
+      )
     );
     row.appendChild(info);
 
@@ -1288,6 +1696,7 @@ function renderCheckoutItems() {
     if (!dish) return;
 
     const count = state.cart[id];
+    const pricing = calculateDishPrice(dish, count);
     const row = make('div', 'checkout-item');
     row.appendChild(make('span', 'checkout-item-name', dish.name));
     row.appendChild(make('span', 'checkout-item-count', '×' + count));
@@ -1295,7 +1704,7 @@ function renderCheckoutItems() {
       make(
         'span',
         'checkout-item-subtotal',
-        money(dish.priceCents * count)
+        money(pricing.subtotalCents)
       )
     );
     els.checkoutItems.appendChild(row);
@@ -1434,6 +1843,7 @@ async function submitOrder() {
   const totals = recomputeCheckoutTotals();
   const couponId = totals.coupon ? totals.coupon.id : '';
 
+  requestOrderNotificationPermission();
   state.submitting = true;
   els.submitOrderBtn.disabled = true;
   els.submitOrderBtn.textContent = '提交中...';
@@ -1464,6 +1874,7 @@ async function submitOrder() {
       state.user.location = data.location || state.addressLocation;
     }
 
+    rememberOrderStatus(data);
     closeCheckout();
     showSuccessView(data, 'menu');
     showToast('下单成功');
@@ -1487,6 +1898,8 @@ async function submitOrder() {
 
 function showSuccessView(order, returnTo) {
   state.currentOrder = order;
+  rememberOrderStatus(order);
+  renderCategoryOrderStatus();
   state.successReturn = returnTo || 'menu';
 
   renderSuccess();
@@ -1618,6 +2031,7 @@ async function refreshCurrentOrder() {
   }
 
   try {
+    const previousStatus = order.status;
     const data = await api(
       '/api/order/' + encodeURIComponent(order.id) +
       '?token=' + encodeURIComponent(order.token)
@@ -1625,7 +2039,13 @@ async function refreshCurrentOrder() {
 
     const next = Object.assign({}, order, data.order, { token: order.token });
     state.currentOrder = next;
+    rememberOrderStatus(next);
+    renderCategoryOrderStatus();
     renderSuccess();
+
+    if (previousStatus !== next.status) {
+      notifyOrderStatus(next);
+    }
 
     if (isTerminal(next.status)) {
       stopPolling();
@@ -1652,13 +2072,49 @@ function updateProfileUI() {
     : '';
 }
 
-async function loadMyOrders() {
+async function loadMyOrders(options) {
+  const opts = options || {};
   const data = await api('/api/my-orders');
   state.history = Array.isArray(data.orders) ? data.orders : [];
+  recordOrderStatuses(state.history, opts.notify !== false);
+  renderCategoryOrderStatus();
   return state.history;
 }
 
+async function pollOrderStatuses() {
+  if (!state.user || !state.user.profileComplete) return;
+
+  try {
+    await loadMyOrders({ notify: true });
+
+    if (!els.ordersView.classList.contains('hidden')) {
+      renderHistoryCards(state.history);
+    }
+  } catch (err) {
+    if (err.status !== 401) {
+      console.warn('订单状态检查失败', err);
+    }
+  }
+}
+
+function startOrderMonitor() {
+  stopOrderMonitor();
+
+  pollOrderStatuses();
+  state.orderMonitorTimer = setInterval(() => {
+    pollOrderStatuses();
+  }, ORDER_MONITOR_INTERVAL);
+}
+
+function stopOrderMonitor() {
+  if (state.orderMonitorTimer) {
+    clearInterval(state.orderMonitorTimer);
+    state.orderMonitorTimer = null;
+  }
+}
+
 async function showOrdersView() {
+  requestOrderNotificationPermission();
   stopPolling();
   blurInside(els.successView);
   blurInside(els.checkoutView);
@@ -1891,6 +2347,11 @@ function bindAppEvents() {
     renderRecommendations();
   });
 
+  els.categoryOrderStatus.addEventListener('click', () => {
+    const orderId = els.categoryOrderStatus.dataset.orderId;
+    if (orderId) openOrderById(orderId, 'menu');
+  });
+
   els.menuList.addEventListener('click', (event) => {
     const button = event.target.closest('[data-action]');
     if (!button) return;
@@ -1953,6 +2414,13 @@ function bindAppEvents() {
   els.successMyOrdersBtn.addEventListener('click', showOrdersView);
 
   els.openOrdersBtn.addEventListener('click', showOrdersView);
+  els.openOrdersQuickBtn.addEventListener('click', showOrdersView);
+  els.orderNoticeOpenBtn.addEventListener('click', () => {
+    const orderId = state.noticeOrderId;
+    hideOrderNotice();
+    if (orderId) openOrderById(orderId, 'orders');
+  });
+  els.orderNoticeCloseBtn.addEventListener('click', hideOrderNotice);
   els.ordersBackBtn.addEventListener('click', hideOrdersView);
 
   els.ordersList.addEventListener('click', (event) => {
@@ -1975,6 +2443,7 @@ function bindAppEvents() {
 
     loadMenu(true);
     loadCoupons();
+    pollOrderStatuses();
 
     if (!els.ordersView.classList.contains('hidden')) {
       loadMyOrders()
@@ -1999,6 +2468,7 @@ async function startApp() {
 
   loadCart();
   await Promise.all([loadMenu(), loadCoupons()]);
+  startOrderMonitor();
 
   if (window.location.hash) {
     routeHash();
@@ -2014,8 +2484,8 @@ async function startApp() {
 async function init() {
   cacheElements();
   bindAuthEvents();
-
-  loadAuthConfig();
+  els.saveProfileBtn.disabled = false;
+  els.saveProfileBtn.textContent = '完成，开始点单';
 
   const params = new URLSearchParams(window.location.search);
   const loginCode = String(params.get('loginCode') || '');
@@ -2060,7 +2530,9 @@ async function init() {
     }
   }
 
-  await autoLogin(bootError);
+  // 首次进入不需要先调用服务器创建账号：立即展示资料页，
+  // 顾客提交资料时再一次性创建账号并完成登录。
+  showProfileStep(bootError);
 }
 
 document.addEventListener('DOMContentLoaded', init);
